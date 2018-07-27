@@ -1,0 +1,26 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "bootstrap/fixes.html" as fixes %}
+{% import "bootstrap/utils.html" as util %}
+
+{% block content %}
+{{util.flashed_messages(dismissible=True)}}
+<div class="container">
+    <h1 align=center style="font-size:120px">
+        <font color="blue">I</font>
+        <font color="red">N</font>
+        <font color="orange">D</font>
+        <font color="green">R</font>
+        <font color="red">A</font>
+    </h1>
+  {{ wtf.quick_form(form, button_map={'submit_button': 'primary'}) }}
+</div>
+<div class="container">
+    {{ response|safe }}
+</div>
+{% endblock %}
+
+{% block head %}
+{{super()}}
+{{fixes.ie8()}}
+{% endblock %}
