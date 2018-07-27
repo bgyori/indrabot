@@ -58,9 +58,6 @@ class IndraBot(object):
         t = ('how is ([^ ]+) activated', get_activeforms)
         templates.append(t)
 
-        def makebdlambda(verb):
-            return lambda a, b: get_binary_directed(a, b, verb)
-
         t = ("does ([^ ]+) interact with ([^ ]+)",
              get_binary_undirected)
         templates.append(t)
@@ -69,9 +66,11 @@ class IndraBot(object):
         templates.append(t)
 
         for verb in affect_verbs:
-            t = ("does ([^ ]+) %s ([^ ]+)" % verb, makebdlambda(verb))
+            t = ("does ([^ ]+) %s ([^ ]+)" % verb,
+                 makelambda_bin(get_binary_directed, verb))
             templates.append(t)
-            t = ("how does ([^ ]+) %s ([^ ]+)" % verb, makebdlambda(verb))
+            t = ("how does ([^ ]+) %s ([^ ]+)" % verb,
+                 makelambda_bin(get_binary_directed, verb))
             templates.append(t)
 
             options = ['all the things', 'all the things that', 'what',
@@ -81,10 +80,12 @@ class IndraBot(object):
                      get_from_source)
                 templates.append(t)
 
-            t = ("what does ([^ ]+) %s" % verb, get_from_source)
+            t = ("what does ([^ ]+) %s" % verb,
+                 makelambda_uni(get_from_source, verb))
             templates.append(t)
 
-            t = ("what %ss ([^ ]+)" % verb, get_to_target)
+            t = ("what %ss ([^ ]+)" % verb,
+                 makelambda_uni(get_to_target, verb))
             templates.append(t)
 
         t = ("what is the link between ([^ ]+) and ([^ ]+)",
@@ -235,10 +236,15 @@ def get_binary_undirected(entity1, entity2):
     print(len(stmts))
     return stmts
 
-def get_from_source(entity):
+def get_from_source(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(subject=key)
+    if not verb or verb not in mod_map:
+        stmts = indra_db_rest.get_statements(subject=key)
+    else:
+        stmt_type = mod_map[verb]
+        stmts = indra_db_rest.get_statements(subject=key,
+                                             stmt_type=stmt_type)
     return stmts
 
 def get_complex_one_side(entity):
@@ -247,8 +253,21 @@ def get_complex_one_side(entity):
     stmts = indra_db_rest.get_statements(agents=[key], stmt_type='Complex')
     return stmts
 
-def get_to_target(entity):
+def get_to_target(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(object=key)
+    if not verb or verb not in mod_map:
+        stmts = indra_db_rest.get_statements(object=key)
+    else:
+        stmt_type = mod_map[verb]
+        stmts = indra_db_rest.get_statements(object=key,
+                                             stmt_type=stmt_type)
+
     return stmts
+
+
+def makelambda_uni(fun, verb):
+    return lambda a: fun(a, verb)
+
+def makelambda_bin(fun, verb):
+    return lambda a, b: fun(a, b, verb)
