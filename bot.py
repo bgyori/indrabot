@@ -33,6 +33,9 @@ class IndraBot(object):
         t = ("what does ([^ ]+) interact with", get_neighborhood)
         templates.append(t)
 
+        t = ("what interacts with ([^ ]+)", get_neighborhood)
+        templates.append(t)
+
         t = (".*what do you know about ([^ ]+)", get_neighborhood)
         templates.append(t)
 
