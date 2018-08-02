@@ -129,6 +129,7 @@ def format_stmts(stmts, output_format):
 
 
 if __name__ == '__main__':
+    logf = open('slack_bot_log.txt', 'a', 1)
     bot = IndraBot()
 
     token = read_slack_token()
@@ -153,6 +154,8 @@ if __name__ == '__main__':
                         continue
                     msg = msg.replace('<@U2F1KPXEW>', '').strip()
 
+                    logf.write('%s\t%s\t' % (msg, userid))
+
                     # Try to get magic modifiers
                     output_format = 'tsv'
                     mods = ['pkl', 'pdf', 'tsv', 'json']
@@ -163,6 +166,8 @@ if __name__ == '__main__':
                             break
 
                     resp = bot.handle_question(msg)
+
+                    logf.write('%d\n' % len(resp))
 
                     prefixes = ['That\'s a great question',
                                 'What an interesting question',
@@ -195,10 +200,12 @@ if __name__ == '__main__':
 
                 except Exception as e:
                     logger.exception(e)
+                    logf.write('%d\n' % -1)
                     reply = 'Sorry, I can\'t answer that, ask something else.'
                     send_message(sc, channel, reply)
             else:
                 time.sleep(2)
         except KeyboardInterrupt:
+            logf.close()
             logger.info('Shutting down due to keyboard interrupt.')
             sys.exit()
