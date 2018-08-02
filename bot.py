@@ -1,5 +1,6 @@
 import re
 import copy
+import nltk
 from fuzzywuzzy import fuzz
 from indra.sources import indra_db_rest, trips
 from indra.databases import hgnc_client
@@ -35,10 +36,10 @@ class IndraBot(object):
         t = ("what interacts with ([^ ]+)", get_neighborhood)
         templates.append(t)
 
-        t = (".*what do you know about ([^ ]+)", get_neighborhood)
+        t = ("what do you know about ([^ ]+)", get_neighborhood)
         templates.append(t)
 
-        t = (".*what does ([^ ]+) do", get_neighborhood)
+        t = ("what does ([^ ]+) do", get_neighborhood)
         templates.append(t)
 
         options1 = ['have an effect on', 'affect', 'influence', 'change',
@@ -115,6 +116,7 @@ class IndraBot(object):
     def handle_question(self, question):
         # First sanitize the string to prepare it for matching
         question = self.sanitize(question)
+        # Next, collect all the patterns that match
         matches = []
         for pattern, action  in self.templates:
             match = re.match(pattern, question)
@@ -123,11 +125,16 @@ class IndraBot(object):
                 matches.append((action, args))
         print('matches', matches)
 
+        # If we have multiple matches, we ask the first one
+        # (possibly ask for clarification)
         if len(matches) > 1:
             return self.respond(*matches[0])
             #return self.ask_clarification(matches)
+        # If we have no matches, we try to find a similar question
+        # and ask for clarification
         elif not matches:
             return self.find_fuzzy_clarify(question)
+        # Otherwise we respond with the first match
         else:
             return self.respond(*matches[0])
 
@@ -140,10 +147,29 @@ class IndraBot(object):
         pass
 
     def find_fuzzy_clarify(self, question):
-        ratios = [(t, fuzz.ratio(question, t)) for t in self.templates]
-        ratios = sorted(ratios, key=lambda x: x[1], reverse=True)
-        print('Your question is similar to "%s", is that what you meant?' %
-              ratios[0][0])
+        best_score = [0, 0]
+        for i, (pattern, action) in enumerate(self.templates):
+            pat_words = ' '.join(get_pattern_words(pattern))
+            question_words = ' '.join(get_pattern_words(question))
+            score = fuzz.token_sort_ratio(pat_words, question_words)
+            if score > best_score[1]:
+                best_score = [i, score]
+            print(score)
+
+        suggest = get_pattern_example(self.templates[best_score[0]][0])
+        print('Your question is similar to "%s?". Try asking it that way.' %
+              suggest)
+
+
+def get_pattern_example(pattern):
+    pattern = pattern.replace('([^ ]+)', 'X')
+    return pattern
+
+
+def get_pattern_words(pattern):
+    pattern = pattern.replace('([^ ]+)', '')
+    words = nltk.word_tokenize(pattern)
+    return words
 
 
 mod_map = {'demethylate': 'Demethylation',
