@@ -9,19 +9,18 @@ from indra.preassembler.grounding_mapper import gm
 class IndraBot(object):
     def __init__(self):
         self.templates = self.make_templates()
-        self.logfile = open('bot_log.txt', 'a')
-
-    def __del__(self):
-        try:
-            self.logfile.close()
-        except Exception:
-            pass
 
     @staticmethod
     def make_templates():
         templates = []
 
         t = ("what are the targets of ([^ ]+)", get_from_source)
+        templates.append(t)
+
+        t = ("^([^ ]+) targets$", get_from_source)
+        templates.append(t)
+
+        t = ("targets of ([^ ]+)", get_from_source)
         templates.append(t)
 
         t = ("what binds ([^ ]+)", get_complex_one_side)
@@ -67,6 +66,12 @@ class IndraBot(object):
         t = ("how does ([^ ]+) interact with ([^ ]+)",
              get_binary_undirected)
         templates.append(t)
+        t = ("([^ ]+) interacts with ([^ ]+)",
+             get_binary_undirected)
+        templates.append(t)
+        t = ("how ([^ ]+) interacts with ([^ ]+)",
+             get_binary_undirected)
+        templates.append(t)
 
         for verb in affect_verbs:
             t = ("does ([^ ]+) %s ([^ ]+)" % verb,
@@ -108,12 +113,8 @@ class IndraBot(object):
         return text
 
     def handle_question(self, question):
+        # First sanitize the string to prepare it for matching
         question = self.sanitize(question)
-        try:
-            self.logfile.write(question + '\n')
-            self.logfile.flush()
-        except Exception:
-            logger.error('Could not log question')
         matches = []
         for pattern, action  in self.templates:
             match = re.match(pattern, question)
