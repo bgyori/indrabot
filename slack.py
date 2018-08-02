@@ -4,6 +4,7 @@ import json
 import indra
 import pickle
 import random
+import datetime
 from indra.assemblers import EnglishAssembler, TsvAssembler, GraphAssembler
 import logging
 from slackclient import SlackClient
@@ -154,7 +155,9 @@ if __name__ == '__main__':
                         continue
                     msg = msg.replace('<@U2F1KPXEW>', '').strip()
 
-                    logf.write('%s\t%s\t' % (msg, userid))
+                    ts = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+
+                    logf.write('%s\t%s\t%s\t' % (msg, userid, ts))
 
                     # Try to get magic modifiers
                     output_format = 'tsv'
