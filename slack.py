@@ -169,6 +169,13 @@ if __name__ == '__main__':
                             break
 
                     resp = bot.handle_question(msg)
+                    if 'question' in resp:
+                        msg = resp['question']
+                        send_message(sc, channel, msg)
+                        logf.write('C\n')
+                        continue
+
+                    resp = resp['stmts']
 
                     logf.write('%d\n' % len(resp))
 

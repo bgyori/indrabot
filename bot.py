@@ -128,15 +128,15 @@ class IndraBot(object):
         # If we have multiple matches, we ask the first one
         # (possibly ask for clarification)
         if len(matches) > 1:
-            return self.respond(*matches[0])
+            return {'stmts': self.respond(*matches[0])}
             #return self.ask_clarification(matches)
         # If we have no matches, we try to find a similar question
         # and ask for clarification
         elif not matches:
-            return self.find_fuzzy_clarify(question)
+            return {'question': self.find_fuzzy_clarify(question)}
         # Otherwise we respond with the first match
         else:
-            return self.respond(*matches[0])
+            return {'stmts': self.respond(*matches[0])}
 
     def respond(self, action, args):
         print('args', args)
@@ -154,11 +154,12 @@ class IndraBot(object):
             score = fuzz.token_sort_ratio(pat_words, question_words)
             if score > best_score[1]:
                 best_score = [i, score]
-            print(score)
 
         suggest = get_pattern_example(self.templates[best_score[0]][0])
-        print('Your question is similar to "%s?". Try asking it that way.' %
-              suggest)
+        msg = 'Your question is similar to "%s?". Try asking it that way.' % \
+              suggest
+        return msg
+
 
 
 def get_pattern_example(pattern):
