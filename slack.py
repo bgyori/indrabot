@@ -108,8 +108,14 @@ def format_stmts(stmts, output_format):
     if output_format == 'tsv':
         msg = ''
         for stmt in stmts:
-            txt = stmt.evidence[0].text
-            line = '%s\t%s\n' % (stmt, txt if txt else '')
+            if not stmt.evidence:
+                logger.warning('Statement %s without evidence' % stmt.uuid)
+                txt = ''
+                pmid = ''
+            else:
+                txt = stmt.evidence[0].text if stmt.evidence[0].text else ''
+                pmid = stmt.evidence[0].pmid if stmt.evidence[0].pmid else ''
+            line = '%s\t%s\t%s\n' % (stmt, txt, pmid)
             msg += line
         return msg
     elif output_format == 'pkl':
