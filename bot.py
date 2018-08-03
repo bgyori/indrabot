@@ -106,10 +106,9 @@ class IndraBot(object):
 
     @staticmethod
     def sanitize(text):
-        marks = ['.', ',', '?', '!', '-', ';', ':']
+        marks = ['.', ',', '?', '!', ';', ':']
         for mark in marks:
             text = text.replace(mark, '')
-        text = text[0].lower() + text[1:]
         text = text.strip()
         return text
 
@@ -119,7 +118,7 @@ class IndraBot(object):
         # Next, collect all the patterns that match
         matches = []
         for pattern, action  in self.templates:
-            match = re.match(pattern, question)
+            match = re.match(pattern, question, re.IGNORECASE)
             if match:
                 args = list(match.groups())
                 matches.append((action, args))
