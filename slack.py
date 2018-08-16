@@ -5,6 +5,7 @@ import indra
 import pickle
 import random
 import datetime
+import websocket
 from indra.assemblers import EnglishAssembler, TsvAssembler, GraphAssembler
 import logging
 from slackclient import SlackClient
@@ -213,7 +214,9 @@ if __name__ == '__main__':
                                     filetype=output_format,
                                     file=open(reply, 'rb'),
                                     text=msg)
-
+                except websocket._exceptions.WebSocketConnectionClosedException as e:
+                    logger.warning('connection closed')
+                    continue
                 except Exception as e:
                     logger.exception(e)
                     logf.write('%d\n' % -1)
