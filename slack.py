@@ -214,7 +214,7 @@ if __name__ == '__main__':
                                     filetype=output_format,
                                     file=open(reply, 'rb'),
                                     text=msg)
-                except websocket._exceptions.WebSocketConnectionClosedException as e:
+                except websocket.WebSocketException as e:
                     logger.warning('connection closed')
                     continue
                 except Exception as e:
