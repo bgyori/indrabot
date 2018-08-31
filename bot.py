@@ -7,6 +7,9 @@ from indra.databases import hgnc_client
 from indra.preassembler.grounding_mapper import gm
 
 
+EV_LIMIT = 1
+
+
 class IndraBot(object):
     def __init__(self):
         self.templates = self.make_templates()
@@ -221,13 +224,14 @@ def get_grounding_from_name(name):
 def get_neighborhood(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(agents=[key])
+    stmts = indra_db_rest.get_statements(agents=[key], ev_limit=EV_LIMIT)
     return stmts
 
 def get_activeforms(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(agents=[key], stmt_type='ActiveForm')
+    stmts = indra_db_rest.get_statements(agents=[key], stmt_type='ActiveForm',
+                                         ev_limit=EV_LIMIT)
     return stmts
 
 def get_phos_activeforms(entity):
@@ -247,12 +251,13 @@ def get_binary_directed(entity1, entity2, verb=None):
     print(key1, key2)
     if not verb or verb not in mod_map:
         stmts = indra_db_rest.get_statements(subject=key1,
-                                             object=key2)
+                                             object=key2, ev_limit=EV_LIMIT)
     elif verb in mod_map:
         stmt_type = mod_map[verb]
         stmts = indra_db_rest.get_statements(subject=key1,
                                              object=key2,
-                                             stmt_type=stmt_type)
+                                             stmt_type=stmt_type,
+                                             ev_limit=EV_LIMIT)
     print(len(stmts))
     return stmts
 
@@ -262,7 +267,8 @@ def get_binary_undirected(entity1, entity2):
     dbn, dbi = get_grounding_from_name(entity2)
     key2 = '%s@%s' % (dbi, dbn)
     print(key1, key2)
-    stmts = indra_db_rest.get_statements(agents=[key1, key2])
+    stmts = indra_db_rest.get_statements(agents=[key1, key2],
+                                         ev_limit=EV_LIMIT)
     print(len(stmts))
     return stmts
 
@@ -270,28 +276,31 @@ def get_from_source(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts = indra_db_rest.get_statements(subject=key)
+        stmts = indra_db_rest.get_statements(subject=key, ev_limit=EV_LIMIT)
     else:
         stmt_type = mod_map[verb]
         stmts = indra_db_rest.get_statements(subject=key,
-                                             stmt_type=stmt_type)
+                                             stmt_type=stmt_type,
+                                             ev_limit=EV_LIMIT)
     return stmts
 
 def get_complex_one_side(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(agents=[key], stmt_type='Complex')
+    stmts = indra_db_rest.get_statements(agents=[key], stmt_type='Complex',
+                                         ev_limit=EV_LIMIT)
     return stmts
 
 def get_to_target(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts = indra_db_rest.get_statements(object=key)
+        stmts = indra_db_rest.get_statements(object=key, ev_limit=EV_LIMIT)
     else:
         stmt_type = mod_map[verb]
         stmts = indra_db_rest.get_statements(object=key,
-                                             stmt_type=stmt_type)
+                                             stmt_type=stmt_type,
+                                             ev_limit=EV_LIMIT)
 
     return stmts
 
