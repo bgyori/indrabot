@@ -6,7 +6,9 @@ import pickle
 import random
 import datetime
 import websocket
-from indra.assemblers import EnglishAssembler, TsvAssembler, GraphAssembler
+from indra.assemblers.english import EnglishAssembler
+from indra.assemblers.tsv import TsvAssembler
+from indra.assemblers.graph import GraphAssembler
 import logging
 from slackclient import SlackClient
 from indra.util import batch_iter
