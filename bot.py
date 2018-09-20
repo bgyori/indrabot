@@ -183,7 +183,8 @@ mod_map = {'demethylate': 'Demethylation',
            'deubiquitinate': 'Deubiquitination'}
 
 
-affect_verbs = ['affect', 'regulate', 'control', 'target', 'phosphorylate'] + \
+affect_verbs = ['affect', 'regulate', 'control', 'target', 'phosphorylate',
+                'activate', 'inhibit'] + \
     list(mod_map.keys())
 
 
