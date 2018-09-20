@@ -84,6 +84,9 @@ class IndraBot(object):
             t = ("how does ([^ ]+) %s ([^ ]+)" % verb,
                  makelambda_bin(get_binary_directed, verb))
             templates.append(t)
+            t = ("can ([^ ]+) %s ([^ ]+)" % verb,
+                 makelambda_bin(get_binary_directed, verb))
+            templates.append(t)
 
             options = ['all the things', 'all the things that', 'what',
                        'things', 'things that']
