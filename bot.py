@@ -96,6 +96,10 @@ class IndraBot(object):
                  makelambda_uni(get_from_source, verb))
             templates.append(t)
 
+            t = ("what genes does ([^ ]+) %s" % verb,
+                 makelambda_uni(get_from_source, verb))
+            templates.append(t)
+
             t = ("what %ss ([^ ]+)" % verb,
                  makelambda_uni(get_to_target, verb))
             templates.append(t)
@@ -180,11 +184,12 @@ mod_map = {'demethylate': 'Demethylation',
            'phosphorylate': 'Phosphorylation',
            'dephosphorylate': 'Dephosphorylation',
            'ubiquitinate': 'Ubiquitination',
-           'deubiquitinate': 'Deubiquitination'}
+           'deubiquitinate': 'Deubiquitination',
+           'activate': 'Activation',
+           'inhibit': 'Inhibition'}
 
 
-affect_verbs = ['affect', 'regulate', 'control', 'target', 'phosphorylate',
-                'activate', 'inhibit'] + \
+affect_verbs = ['affect', 'regulate', 'control', 'target'] + \
     list(mod_map.keys())
 
 
