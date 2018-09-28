@@ -118,7 +118,8 @@ def format_stmts(stmts, output_format):
             else:
                 txt = stmt.evidence[0].text if stmt.evidence[0].text else ''
                 pmid = stmt.evidence[0].pmid if stmt.evidence[0].pmid else ''
-            line = '%s\t%s\t%s\n' % (stmt, txt, pmid)
+            ea_txt = EnglishAssembler([stmt]).make_model()
+            line = '%s\t%s\t"%s"\tPMID%s\n' % (stmt, ea_txt, txt, pmid)
             msg += line
         return msg
     elif output_format == 'pkl':
