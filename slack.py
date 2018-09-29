@@ -116,10 +116,16 @@ def format_stmts(stmts, output_format):
                 txt = ''
                 pmid = ''
             else:
-                txt = stmt.evidence[0].text if stmt.evidence[0].text else ''
+                txt = '"%s"' % stmt.evidence[0].text if \
+                    stmt.evidence[0].text else ''
                 pmid = stmt.evidence[0].pmid if stmt.evidence[0].pmid else ''
-            ea_txt = EnglishAssembler([stmt]).make_model()
-            line = '%s\t%s\t"%s"\tPMID%s\n' % (stmt, ea_txt, txt, pmid)
+            try:
+                ea_txt = EnglishAssembler([stmt]).make_model()
+            except Exception as e:
+                ea_txt = ''
+                logger.error('English assembly failed for %s' % stmt)
+                logger.error(e)
+            line = '%s\t%s\t%s\tPMID%s\n' % (stmt, ea_txt, txt, pmid)
             msg += line
         return msg
     elif output_format == 'pkl':
