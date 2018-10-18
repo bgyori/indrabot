@@ -21,6 +21,9 @@ logger = logging.getLogger('indra_slack_bot')
 user_cache = {}
 channel_cache = {}
 
+class IndraBotError(Exception):
+    pass
+
 def read_slack_token(fname=None):
     # Token can be found at https://api.slack.com/web#authentication
     if fname is None:
@@ -145,21 +148,30 @@ def format_stmts(stmts, output_format):
     return None
 
 
+def _connect():
+    token = read_slack_token()
+    if not token:
+        raise IndraBotError("Could not get slack token.")
+    sc = SlackClient(token)
+    conn = sc.rtm_connect()
+    if not conn:
+        raise IndraBotError('Could not connect to Slack.')
+    return sc
+
+
 if __name__ == '__main__':
     logf = open('slack_bot_log.txt', 'a', 1)
     bot = IndraBot()
 
-    token = read_slack_token()
-    if not token:
-        sys.exit()
-    sc = SlackClient(token)
-    conn = sc.rtm_connect()
-    if not conn:
-        logger.error('Could not connect to Slack.')
-        sys.exit()
+    sc = _connect()
     while True:
         try:
-            res = read_message(sc)
+            try:
+                res = read_message(sc)
+            except:
+                # Try one more time with a fresh connection.
+                sc = _connect()
+                res = read_message(sc)
             if res == -1:
                 continue
             elif res:
