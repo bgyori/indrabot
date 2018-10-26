@@ -21,8 +21,10 @@ logger = logging.getLogger('indra_slack_bot')
 user_cache = {}
 channel_cache = {}
 
+
 class IndraBotError(Exception):
     pass
+
 
 def read_slack_token(fname=None):
     # Token can be found at https://api.slack.com/web#authentication
@@ -36,6 +38,7 @@ def read_slack_token(fname=None):
         logger.error('Could not read Slack token from %s.' % fname)
         return None
 
+
 def get_user_name(sc, user_id):
     user_name = user_cache.get(user_id)
     if user_name:
@@ -48,6 +51,7 @@ def get_user_name(sc, user_id):
             return user['name']
     return None
 
+
 def get_channel_name(sc, channel_id):
     channel_name = channel_cache.get(channel_id)
     if channel_name:
@@ -59,6 +63,7 @@ def get_channel_name(sc, channel_id):
         channel_cache[channel_id] = channel['name']
         return channel['name']
     return None
+
 
 def read_message(sc):
     events = sc.rtm_read()
@@ -91,6 +96,13 @@ def read_message(sc):
         return (channel, user_name, msg, user)
     return None
 
+
+def get_curation_link(stmt_hash):
+    link = 'https://db.indra.bio/statements/from_hash/%s?format=html' % \
+        stmt_hash 
+    return link
+
+
 def send_message(sc, channel, msg):
     sc.api_call("chat.postMessage",
                 channel=channel,
@@ -98,22 +110,10 @@ def send_message(sc, channel, msg):
     logger.info('Message sent: %s' % msg)
 
 
-def format_stmts_str(stmts):
-    msg = ''
-    for stmt in stmts:
-        txt = stmt.evidence[0].text
-        if txt is None:
-            line = '`%s`\n' % stmt
-        else:
-            line = '`%s`, %s\n' % (stmt, txt)
-        msg += line
-
-    return msg
-
 def format_stmts(stmts, output_format):
     if output_format == 'tsv':
         msg = ''
-        for stmt in stmts:
+        for stmt_hash, stmt in stmts.items():
             if not stmt.evidence:
                 logger.warning('Statement %s without evidence' % stmt.uuid)
                 txt = ''
@@ -128,22 +128,24 @@ def format_stmts(stmts, output_format):
                 ea_txt = ''
                 logger.error('English assembly failed for %s' % stmt)
                 logger.error(e)
-            line = '%s\t%s\t%s\tPMID%s\n' % (stmt, ea_txt, txt, pmid)
+            curation = get_curation_link(stmt_hash)
+            line = '%s\t%s\t%s\tPMID%s\t%s\n' % \
+                (stmt, ea_txt, txt, pmid, curation)
             msg += line
         return msg
     elif output_format == 'pkl':
         fname = 'indrabot.pkl'
         with open(fname, 'wb') as fh:
-            pickle.dump(stmts, fh)
+            pickle.dump(stmts.values(), fh)
         return fname
     elif output_format == 'pdf':
         fname = 'indrabot.pdf'
-        ga = GraphAssembler(stmts)
+        ga = GraphAssembler(stmts.values())
         ga.make_model()
         ga.save_pdf(fname)
         return fname
     elif output_format == 'json':
-        msg = json.dumps(stmts_to_json(stmts), indent=1)
+        msg = json.dumps(stmts_to_json(stmts.values()), indent=1)
         return msg
     return None
 
