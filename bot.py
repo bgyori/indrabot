@@ -230,21 +230,22 @@ def get_grounding_from_name(name):
 
 
 def query_statements(**kwargs):
-    resp = query_statements(**kwargs)
+    kwargs['simple_response'] = False
+    kwargs['ev_limit'] = EV_LIMIT
+    resp = indra_db_rest.get_statements(**kwargs)
     return resp.get_hash_statements_dict()
 
 
 def get_neighborhood(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = query_statements(agents=[key], ev_limit=EV_LIMIT)
+    stmts = query_statements(agents=[key])
     return stmts
 
 def get_activeforms(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = query_statements(agents=[key], stmt_type='ActiveForm',
-                             ev_limit=EV_LIMIT)
+    stmts = query_statements(agents=[key], stmt_type='ActiveForm')
     return stmts
 
 def get_phos_activeforms(entity):
@@ -263,11 +264,11 @@ def get_binary_directed(entity1, entity2, verb=None):
     key2 = '%s@%s' % (dbi, dbn)
     print(key1, key2)
     if not verb or verb not in mod_map:
-        stmts = query_statements(subject=key1, object=key2, ev_limit=EV_LIMIT)
+        stmts = query_statements(subject=key1, object=key2)
     elif verb in mod_map:
         stmt_type = mod_map[verb]
         stmts = query_statements(subject=key1, object=key2,
-                                 stmt_type=stmt_type, ev_limit=EV_LIMIT)
+                                 stmt_type=stmt_type)
     return stmts
 
 def get_binary_undirected(entity1, entity2):
@@ -275,39 +276,33 @@ def get_binary_undirected(entity1, entity2):
     key1 = '%s@%s' % (dbi, dbn)
     dbn, dbi = get_grounding_from_name(entity2)
     key2 = '%s@%s' % (dbi, dbn)
-    print(key1, key2)
-    stmts = query_statements(agents=[key1, key2], ev_limit=EV_LIMIT)
-    print(len(stmts))
+    stmts = query_statements(agents=[key1, key2])
     return stmts
 
 def get_from_source(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts = query_statements(subject=key, ev_limit=EV_LIMIT)
+        stmts = query_statements(subject=key)
     else:
         stmt_type = mod_map[verb]
-        stmts = query_statements(subject=key, stmt_type=stmt_type,
-                                 ev_limit=EV_LIMIT)
+        stmts = query_statements(subject=key, stmt_type=stmt_type)
     return stmts
 
 def get_complex_one_side(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = query_statements(agents=[key], stmt_type='Complex',
-                             ev_limit=EV_LIMIT)
+    stmts = query_statements(agents=[key], stmt_type='Complex')
     return stmts
 
 def get_to_target(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts = query_statements(object=key, ev_limit=EV_LIMIT)
+        stmts = query_statements(object=key)
     else:
         stmt_type = mod_map[verb]
-        stmts = query_statements(object=key, stmt_type=stmt_type,
-                                 ev_limit=EV_LIMIT)
-
+        stmts = query_statements(object=key, stmt_type=stmt_type)
     return stmts
 
 
