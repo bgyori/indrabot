@@ -61,6 +61,10 @@ class IndraBot(object):
                 templates.append(t)
         t = ('what are the active forms of ([^ ]+)', get_activeforms)
         templates.append(t)
+        
+        t = ('what forms of ([^ ]+) are active', get_activeforms)
+        templates.append(t)
+        
         t = ('how is ([^ ]+) activated', get_activeforms)
         templates.append(t)
 
@@ -215,7 +219,8 @@ def get_grounding_from_name(name):
 
     # If none of these, we try TRIPS
     try:
-        tp = trips.process_text(name)
+        print('Looking up %s with TRIPS' % name)   
+        tp = trips.process_text(name, service_endpoint='drum-dev')
         terms = tp.tree.findall('TERM')
         if not terms:
             return ('TEXT', name)
