@@ -235,10 +235,13 @@ def suggest_relevant_relations(groundings):
                                                    children_str)
             msg_parts.append(msg)
         if dbn == 'HGNC':
-            uri = expander.entities.get_uri(dbi, dbi)
+            name = hgnc_client.get_hgnc_name(dbi)
+            uri = expander.entities.get_uri(dbn, name)
+            print(uri)
             parent_uris = expander.entities.get_parents(uri)
-            parents = [expand_families._agent_from_uri(url)
+            parents = [expand_families._agent_from_uri(uri)
                        for uri in parent_uris]
+            print(parents)
             if not parents:
                 continue
             parent_names = [p.name for p in parents]
@@ -247,6 +250,7 @@ def suggest_relevant_relations(groundings):
             msg = ('%s "%s" as a protein that is part of a family or complex, '
                    'you might be interested in asking about some of those too '
                    'like %s.') % (prefix, entity_txt, parents_str)
+            msg_parts.append(msg)
 
 
     full_msg = ' '.join(msg_parts)
