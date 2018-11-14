@@ -81,6 +81,9 @@ class IndraBot(object):
              get_binary_undirected)
         templates.append(t)
 
+        t = ("does ([^ ]+) bind ([^ ]+)", get_binary_undirected)
+        templates.append(t)
+
         for verb in affect_verbs:
             t = ("does ([^ ]+) %s ([^ ]+)" % verb,
                  makelambda_bin(get_binary_directed, verb))
@@ -141,7 +144,8 @@ class IndraBot(object):
         # If we have multiple matches, we ask the first one
         # (possibly ask for clarification)
         if len(matches) > 1:
-            return {'stmts': self.respond(*matches[0])}
+            ret = self.respond(*matches[0])
+            return ret
             #return self.ask_clarification(matches)
         # If we have no matches, we try to find a similar question
         # and ask for clarification
@@ -149,7 +153,8 @@ class IndraBot(object):
             return {'question': self.find_fuzzy_clarify(question)}
         # Otherwise we respond with the first match
         else:
-            return {'stmts': self.respond(*matches[0])}
+            ret = self.respond(*matches[0])
+            return ret
 
     def respond(self, action, args):
         print('args', args)
@@ -239,30 +244,32 @@ def get_neighborhood(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     stmts = indra_db_rest.get_statements(agents=[key], ev_limit=EV_LIMIT)
-    return stmts
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+
 
 def get_activeforms(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     stmts = indra_db_rest.get_statements(agents=[key], stmt_type='ActiveForm',
                                          ev_limit=EV_LIMIT)
-    return stmts
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+
 
 def get_phos_activeforms(entity):
-    stmts = get_activeforms(entity)
+    ret = get_activeforms(entity)
     ret_stmts = []
-    for stmt in stmts:
+    for stmt in ret.get('stmts', []):
         for mc in stmt.agent.mods:
             if mc.mod_type == 'phosphorylation':
                 ret_stmts.append(stmt)
-    return ret_stmts
+    return {'stmts': ret_stmts, 'groundings': ret['groundings']}
+
 
 def get_binary_directed(entity1, entity2, verb=None):
-    dbn, dbi = get_grounding_from_name(entity1)
-    key1 = '%s@%s' % (dbi, dbn)
-    dbn, dbi = get_grounding_from_name(entity2)
-    key2 = '%s@%s' % (dbi, dbn)
-    print(key1, key2)
+    dbn1, dbi1 = get_grounding_from_name(entity1)
+    key1 = '%s@%s' % (dbi1, dbn1)
+    dbn2, dbi2 = get_grounding_from_name(entity2)
+    key2 = '%s@%s' % (dbi2, dbn2)
     if not verb or verb not in mod_map:
         stmts = indra_db_rest.get_statements(subject=key1,
                                              object=key2, ev_limit=EV_LIMIT)
@@ -272,19 +279,20 @@ def get_binary_directed(entity1, entity2, verb=None):
                                              object=key2,
                                              stmt_type=stmt_type,
                                              ev_limit=EV_LIMIT)
-    print(len(stmts))
-    return stmts
+    return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
+                                           entity2: (dbn2, dbi2)}}
+
 
 def get_binary_undirected(entity1, entity2):
-    dbn, dbi = get_grounding_from_name(entity1)
-    key1 = '%s@%s' % (dbi, dbn)
-    dbn, dbi = get_grounding_from_name(entity2)
-    key2 = '%s@%s' % (dbi, dbn)
-    print(key1, key2)
+    dbn1, dbi1 = get_grounding_from_name(entity1)
+    key1 = '%s@%s' % (dbi1, dbn1)
+    dbn2, dbi2 = get_grounding_from_name(entity2)
+    key2 = '%s@%s' % (dbi2, dbn2)
     stmts = indra_db_rest.get_statements(agents=[key1, key2],
                                          ev_limit=EV_LIMIT)
-    print(len(stmts))
-    return stmts
+    return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
+                                           entity2: (dbn2, dbi2)}}
+
 
 def get_from_source(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
@@ -296,14 +304,16 @@ def get_from_source(entity, verb=None):
         stmts = indra_db_rest.get_statements(subject=key,
                                              stmt_type=stmt_type,
                                              ev_limit=EV_LIMIT)
-    return stmts
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+
 
 def get_complex_one_side(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     stmts = indra_db_rest.get_statements(agents=[key], stmt_type='Complex',
                                          ev_limit=EV_LIMIT)
-    return stmts
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+
 
 def get_to_target(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
@@ -315,12 +325,12 @@ def get_to_target(entity, verb=None):
         stmts = indra_db_rest.get_statements(object=key,
                                              stmt_type=stmt_type,
                                              ev_limit=EV_LIMIT)
-
-    return stmts
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
 
 
 def makelambda_uni(fun, verb):
     return lambda a: fun(a, verb)
+
 
 def makelambda_bin(fun, verb):
     return lambda a, b: fun(a, b, verb)
