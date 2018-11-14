@@ -9,6 +9,7 @@ import websocket
 from indra.assemblers.english import EnglishAssembler
 from indra.assemblers.tsv import TsvAssembler
 from indra.assemblers.graph import GraphAssembler
+from indra.assemblers.html import HtmlAssembler
 import logging
 from slackclient import SlackClient
 from indra.util import batch_iter
@@ -98,18 +99,6 @@ def send_message(sc, channel, msg):
     logger.info('Message sent: %s' % msg)
 
 
-def format_stmts_str(stmts):
-    msg = ''
-    for stmt in stmts:
-        txt = stmt.evidence[0].text
-        if txt is None:
-            line = '`%s`\n' % stmt
-        else:
-            line = '`%s`, %s\n' % (stmt, txt)
-        msg += line
-
-    return msg
-
 def format_stmts(stmts, output_format):
     if output_format == 'tsv':
         msg = ''
@@ -145,6 +134,11 @@ def format_stmts(stmts, output_format):
     elif output_format == 'json':
         msg = json.dumps(stmts_to_json(stmts), indent=1)
         return msg
+    elif output_format == 'html':
+        ha = HtmlAssembler(stmts)
+        fname = 'indrabot.html'
+        ha.save_model(fname)
+        return fname
     return None
 
 
@@ -189,7 +183,7 @@ if __name__ == '__main__':
 
                     # Try to get magic modifiers
                     output_format = 'tsv'
-                    mods = ['pkl', 'pdf', 'tsv', 'json']
+                    mods = ['pkl', 'pdf', 'tsv', 'json', 'html']
                     for mod in mods:
                         if msg.endswith('/%s' % mod):
                             output_format = mod
