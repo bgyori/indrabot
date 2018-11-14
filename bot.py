@@ -2,8 +2,10 @@ import re
 import copy
 import nltk
 from fuzzywuzzy import fuzz
+from indra.statements import Agent
 from indra.sources import indra_db_rest, trips
 from indra.databases import hgnc_client
+from indra.tools.expand_families import Expander
 from indra.preassembler.grounding_mapper import gm
 
 
@@ -145,6 +147,9 @@ class IndraBot(object):
         # (possibly ask for clarification)
         if len(matches) > 1:
             ret = self.respond(*matches[0])
+            suggestions = suggest_relevant_relations(ret['groundings'])
+            if suggestions:
+                ret['suggestion'] = suggestions
             return ret
             #return self.ask_clarification(matches)
         # If we have no matches, we try to find a similar question
@@ -154,6 +159,10 @@ class IndraBot(object):
         # Otherwise we respond with the first match
         else:
             ret = self.respond(*matches[0])
+            suggestions = suggest_relevant_relations(ret['groundings'])
+            if suggestions:
+                ret['suggestion'] = suggestions
+            print(ret)
             return ret
 
     def respond(self, action, args):
@@ -203,6 +212,30 @@ mod_map = {'demethylate': 'Demethylation',
 
 affect_verbs = ['affect', 'regulate', 'control', 'target'] + \
     list(mod_map.keys())
+
+
+expander = Expander()
+def suggest_relevant_relations(groundings):
+    prefix1 = 'By the way, I recognized'
+    prefix2 = 'I also recognized'
+    msg_parts = []
+    for entity_txt, (dbn, dbi) in groundings.items():
+        if dbn == 'FPLX':
+            ag = Agent(name=entity_txt, db_refs={dbn: dbi})
+            children = expander.get_children(ag)
+            print(children)
+            if not children:
+                continue
+            children_names = [ch[1] for ch in children]
+            children_str = ', '.join(children_names)
+            prefix = prefix1 if not msg_parts else prefix2
+            msg = ('%s "%s" as a family or complex, '
+                   'you might be interested in asking about some of its '
+                   'specific members like %s.') % (prefix, entity_txt,
+                                                   children_str)
+            msg_parts.append(msg)
+    full_msg = ' '.join(msg_parts)
+    return full_msg
 
 
 def get_grounding_from_name(name):

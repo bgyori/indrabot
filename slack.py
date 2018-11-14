@@ -203,9 +203,9 @@ if __name__ == '__main__':
                         logf.write('C\n')
                         continue
 
-                    resp = resp['stmts']
+                    resp_stmts = resp['stmts']
 
-                    logf.write('%d\n' % len(resp))
+                    logf.write('%d\n' % len(resp_stmts))
 
                     prefixes = ['That\'s a great question',
                                 'What an interesting question',
@@ -213,14 +213,15 @@ if __name__ == '__main__':
                                 'Very interesting']
                     prefix = random.choice(prefixes)
                     msg = "%s, <@%s>" % (prefix, userid)
-                    if len(resp) == 0:
+                    if len(resp_stmts) == 0:
                         msg += ' but I couldn\'t find any statements about that.'
                     else:
                         msg += '! I found %d statement%s about that.' % \
-                                 (len(resp), ('s' if (len(resp) > 1) else ''))
+                                 (len(resp_stmts),
+                                  ('s' if (len(resp_stmts) > 1) else ''))
                     send_message(sc, channel, msg)
                     #send_message(sc, channel, reply)
-                    reply = format_stmts(resp, output_format)
+                    reply = format_stmts(resp_stmts, output_format)
                     if output_format in ('tsv', 'json'):
                         sc.api_call("files.upload",
                                     channels=channel,
@@ -235,6 +236,11 @@ if __name__ == '__main__':
                                     filetype=output_format,
                                     file=open(reply, 'rb'),
                                     text=msg)
+                    print(resp.keys())
+                    if 'suggestion' in resp:
+                        print(resp['suggestion'])
+                        send_message(sc, channel, resp['suggestion'])
+
                 except websocket.WebSocketException as e:
                     logger.warning('connection closed')
                     continue
