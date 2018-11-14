@@ -5,7 +5,7 @@ from fuzzywuzzy import fuzz
 from indra.statements import Agent
 from indra.sources import indra_db_rest, trips
 from indra.databases import hgnc_client
-from indra.tools.expand_families import Expander
+from indra.tools import expand_families
 from indra.preassembler.grounding_mapper import gm
 
 
@@ -214,7 +214,7 @@ affect_verbs = ['affect', 'regulate', 'control', 'target'] + \
     list(mod_map.keys())
 
 
-expander = Expander()
+expander = expand_families.Expander()
 def suggest_relevant_relations(groundings):
     prefix1 = 'By the way, I recognized'
     prefix2 = 'I also recognized'
@@ -234,6 +234,21 @@ def suggest_relevant_relations(groundings):
                    'specific members like %s.') % (prefix, entity_txt,
                                                    children_str)
             msg_parts.append(msg)
+        if dbn == 'HGNC':
+            uri = expander.entities.get_uri(dbi, dbi)
+            parent_uris = expander.entities.get_parents(uri)
+            parents = [expand_families._agent_from_uri(url)
+                       for uri in parent_uris]
+            if not parents:
+                continue
+            parent_names = [p.name for p in parents]
+            parents_str = ', '.join(parent_names)
+            prefix = prefix1 if not msg_parts else prefix2
+            msg = ('%s "%s" as a protein that is part of a family or complex, '
+                   'you might be interested in asking about some of those too '
+                   'like %s.') % (prefix, entity_txt, parents_str)
+
+
     full_msg = ' '.join(msg_parts)
     return full_msg
 
@@ -257,7 +272,7 @@ def get_grounding_from_name(name):
 
     # If none of these, we try TRIPS
     try:
-        print('Looking up %s with TRIPS' % name)   
+        print('Looking up %s with TRIPS' % name)
         tp = trips.process_text(name, service_endpoint='drum-dev')
         terms = tp.tree.findall('TERM')
         if not terms:
@@ -268,7 +283,8 @@ def get_grounding_from_name(name):
             return ('HGNC', agent.db_refs['HGNC'])
         if 'FPLX' in agent.db_refs:
             return ('FPLX', agent.db_refs['FPLX'])
-    except Exception:
+    except Exception as e:
+        print(e)
         return ('TEXT', name)
     return ('TEXT', name)
 
