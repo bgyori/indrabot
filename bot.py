@@ -216,6 +216,12 @@ affect_verbs = ['affect', 'regulate', 'control', 'target'] + \
 
 expander = expand_families.Expander()
 def suggest_relevant_relations(groundings):
+    def make_nice_list(lst):
+        if len(lst) == 1:
+            return lst[0]
+        pre = ', '.join(lst[:-1])
+        full = '%s, or %s' % (pre, lst[-1])
+        return full
     prefix1 = 'By the way, I recognized'
     prefix2 = 'I also recognized'
     msg_parts = []
@@ -227,7 +233,7 @@ def suggest_relevant_relations(groundings):
             if not children:
                 continue
             children_names = [ch[1] for ch in children]
-            children_str = ', '.join(children_names)
+            children_str = make_nice_list(children_names)
             prefix = prefix1 if not msg_parts else prefix2
             msg = ('%s "%s" as a family or complex, '
                    'you might be interested in asking about some of its '
@@ -245,7 +251,7 @@ def suggest_relevant_relations(groundings):
             if not parents:
                 continue
             parent_names = [p.name for p in parents]
-            parents_str = ', '.join(parent_names)
+            parents_str = make_nice_list(parent_names)
             prefix = prefix1 if not msg_parts else prefix2
             msg = ('%s "%s" as a protein that is part of a family or complex, '
                    'you might be interested in asking about some of those too '
