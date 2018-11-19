@@ -253,12 +253,13 @@ if __name__ == '__main__':
                                     file=open(reply, 'rb'),
                                     text=msg)
                     # Try dumping to S3
-                    try:
-                        url = dump_to_s3(resp_stmts)
-                        msg = 'You can also view these results here: %s' % url
-                        send_message(sc, channel, msg)
-                    except Exception as e:
-                        logger.error(e)
+                    if resp_stmts:
+                        try:
+                            url = dump_to_s3(resp_stmts)
+                            msg = 'You can also view these results here: %s' % url
+                            send_message(sc, channel, msg)
+                        except Exception as e:
+                            logger.error(e)
                     print(resp.keys())
                     if 'suggestion' in resp:
                         print(resp['suggestion'])
