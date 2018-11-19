@@ -236,24 +236,23 @@ if __name__ == '__main__':
                                  (len(resp_stmts),
                                   ('s' if (len(resp_stmts) > 1) else ''))
                     send_message(sc, channel, msg)
-                    #send_message(sc, channel, reply)
-                    reply = format_stmts(resp_stmts, output_format)
-                    if output_format in ('tsv', 'json'):
-                        sc.api_call("files.upload",
-                                    channels=channel,
-                                    filename='indrabot.%s' % output_format,
-                                    filetype=output_format,
-                                    content=reply,
-                                    text=msg)
-                    else:
-                        sc.api_call("files.upload",
-                                    channels=channel,
-                                    filename='indrabot.%s' % output_format,
-                                    filetype=output_format,
-                                    file=open(reply, 'rb'),
-                                    text=msg)
-                    # Try dumping to S3
                     if resp_stmts:
+                        reply = format_stmts(resp_stmts, output_format)
+                        if output_format in ('tsv', 'json'):
+                            sc.api_call("files.upload",
+                                        channels=channel,
+                                        filename='indrabot.%s' % output_format,
+                                        filetype=output_format,
+                                        content=reply,
+                                        text=msg)
+                        else:
+                            sc.api_call("files.upload",
+                                        channels=channel,
+                                        filename='indrabot.%s' % output_format,
+                                        filetype=output_format,
+                                        file=open(reply, 'rb'),
+                                        text=msg)
+                        # Try dumping to S3
                         try:
                             url = dump_to_s3(resp_stmts)
                             msg = 'You can also view these results here: %s' % url
