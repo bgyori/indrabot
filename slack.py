@@ -1,6 +1,8 @@
 import sys
 import time
 import json
+import uuid
+import boto3
 import indra
 import pickle
 import random
@@ -22,8 +24,10 @@ logger = logging.getLogger('indra_slack_bot')
 user_cache = {}
 channel_cache = {}
 
+
 class IndraBotError(Exception):
     pass
+
 
 def read_slack_token(fname=None):
     # Token can be found at https://api.slack.com/web#authentication
@@ -37,6 +41,7 @@ def read_slack_token(fname=None):
         logger.error('Could not read Slack token from %s.' % fname)
         return None
 
+
 def get_user_name(sc, user_id):
     user_name = user_cache.get(user_id)
     if user_name:
@@ -49,6 +54,7 @@ def get_user_name(sc, user_id):
             return user['name']
     return None
 
+
 def get_channel_name(sc, channel_id):
     channel_name = channel_cache.get(channel_id)
     if channel_name:
@@ -60,6 +66,7 @@ def get_channel_name(sc, channel_id):
         channel_cache[channel_id] = channel['name']
         return channel['name']
     return None
+
 
 def read_message(sc):
     events = sc.rtm_read()
@@ -91,6 +98,7 @@ def read_message(sc):
                     (user_name, msg))
         return (channel, user_name, msg, user)
     return None
+
 
 def send_message(sc, channel, msg):
     sc.api_call("chat.postMessage",
@@ -140,6 +148,20 @@ def format_stmts(stmts, output_format):
         ha.save_model(fname)
         return fname
     return None
+
+
+def dump_to_s3(stmts):
+    s3 = boto3.client('s3')
+    bucket = 'indrabot-results'
+    fname = '%s.html' % uuid.uuid4()
+    ha = HtmlAssembler(stmts)
+    html_str = ha.make_model()
+    url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
+    logger.info('Dumping to %s' % url)
+    s3.put_object(Key=fname, Body=html_str.encode('utf-8'),
+                  Bucket=bucket, ContentType='text/html')
+    logger.info('Dumped to %s' % url)
+    return url
 
 
 def _connect():
@@ -230,6 +252,13 @@ if __name__ == '__main__':
                                     filetype=output_format,
                                     file=open(reply, 'rb'),
                                     text=msg)
+                    # Try dumping to S3
+                    try:
+                        url = dump_to_s3(resp_stmts)
+                        msg = 'You can also view these results here: %s' % url
+                        send_message(sc, channel, msg)
+                    except Exception as e:
+                        logger.error(e)
                     print(resp.keys())
                     if 'suggestion' in resp:
                         print(resp['suggestion'])
