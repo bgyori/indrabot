@@ -63,10 +63,10 @@ class IndraBot(object):
                 templates.append(t)
         t = ('what are the active forms of ([^ ]+)', get_activeforms)
         templates.append(t)
-        
+
         t = ('what forms of ([^ ]+) are active', get_activeforms)
         templates.append(t)
-        
+
         t = ('how is ([^ ]+) activated', get_activeforms)
         templates.append(t)
 

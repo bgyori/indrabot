@@ -18,6 +18,7 @@ class ExampleForm(Form):
 
 
 def format_stmts(stmts):
+    stmts = stmts.get('stmts', [])
     stmts = sorted(stmts, key=lambda x: x.__class__.__name__)
     html = ''
     for stmt_type, stmts_this_type in \

@@ -1,14 +1,18 @@
 import sys
 import time
 import json
+import uuid
+import boto3
 import indra
 import pickle
 import random
 import datetime
 import websocket
+from indra.config import get_config
 from indra.assemblers.english import EnglishAssembler
 from indra.assemblers.tsv import TsvAssembler
 from indra.assemblers.graph import GraphAssembler
+from indra.assemblers.html import HtmlAssembler
 import logging
 from slackclient import SlackClient
 from indra.util import batch_iter
@@ -21,8 +25,10 @@ logger = logging.getLogger('indra_slack_bot')
 user_cache = {}
 channel_cache = {}
 
+
 class IndraBotError(Exception):
     pass
+
 
 def read_slack_token(fname=None):
     # Token can be found at https://api.slack.com/web#authentication
@@ -36,6 +42,7 @@ def read_slack_token(fname=None):
         logger.error('Could not read Slack token from %s.' % fname)
         return None
 
+
 def get_user_name(sc, user_id):
     user_name = user_cache.get(user_id)
     if user_name:
@@ -48,6 +55,7 @@ def get_user_name(sc, user_id):
             return user['name']
     return None
 
+
 def get_channel_name(sc, channel_id):
     channel_name = channel_cache.get(channel_id)
     if channel_name:
@@ -59,6 +67,7 @@ def get_channel_name(sc, channel_id):
         channel_cache[channel_id] = channel['name']
         return channel['name']
     return None
+
 
 def read_message(sc):
     events = sc.rtm_read()
@@ -91,24 +100,13 @@ def read_message(sc):
         return (channel, user_name, msg, user)
     return None
 
+
 def send_message(sc, channel, msg):
     sc.api_call("chat.postMessage",
                 channel=channel,
                 text=msg, as_user=True)
     logger.info('Message sent: %s' % msg)
 
-
-def format_stmts_str(stmts):
-    msg = ''
-    for stmt in stmts:
-        txt = stmt.evidence[0].text
-        if txt is None:
-            line = '`%s`\n' % stmt
-        else:
-            line = '`%s`, %s\n' % (stmt, txt)
-        msg += line
-
-    return msg
 
 def format_stmts(stmts, output_format):
     if output_format == 'tsv':
@@ -145,7 +143,29 @@ def format_stmts(stmts, output_format):
     elif output_format == 'json':
         msg = json.dumps(stmts_to_json(stmts), indent=1)
         return msg
+    elif output_format == 'html':
+        ha = HtmlAssembler(stmts)
+        fname = 'indrabot.html'
+        ha.save_model(fname)
+        return fname
     return None
+
+
+db_rest_url = get_config('INDRA_DB_REST_URL')
+
+
+def dump_to_s3(stmts):
+    s3 = boto3.client('s3')
+    bucket = 'indrabot-results'
+    fname = '%s.html' % uuid.uuid4()
+    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url)
+    html_str = ha.make_model()
+    url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
+    logger.info('Dumping to %s' % url)
+    s3.put_object(Key=fname, Body=html_str.encode('utf-8'),
+                  Bucket=bucket, ContentType='text/html')
+    logger.info('Dumped to %s' % url)
+    return url
 
 
 def _connect():
@@ -189,7 +209,7 @@ if __name__ == '__main__':
 
                     # Try to get magic modifiers
                     output_format = 'tsv'
-                    mods = ['pkl', 'pdf', 'tsv', 'json']
+                    mods = ['pkl', 'pdf', 'tsv', 'json', 'html']
                     for mod in mods:
                         if msg.endswith('/%s' % mod):
                             output_format = mod
@@ -220,22 +240,29 @@ if __name__ == '__main__':
                                  (len(resp_stmts),
                                   ('s' if (len(resp_stmts) > 1) else ''))
                     send_message(sc, channel, msg)
-                    #send_message(sc, channel, reply)
-                    reply = format_stmts(resp_stmts, output_format)
-                    if output_format in ('tsv', 'json'):
-                        sc.api_call("files.upload",
-                                    channels=channel,
-                                    filename='indrabot.%s' % output_format,
-                                    filetype=output_format,
-                                    content=reply,
-                                    text=msg)
-                    else:
-                        sc.api_call("files.upload",
-                                    channels=channel,
-                                    filename='indrabot.%s' % output_format,
-                                    filetype=output_format,
-                                    file=open(reply, 'rb'),
-                                    text=msg)
+                    if resp_stmts:
+                        reply = format_stmts(resp_stmts, output_format)
+                        if output_format in ('tsv', 'json'):
+                            sc.api_call("files.upload",
+                                        channels=channel,
+                                        filename='indrabot.%s' % output_format,
+                                        filetype=output_format,
+                                        content=reply,
+                                        text=msg)
+                        else:
+                            sc.api_call("files.upload",
+                                        channels=channel,
+                                        filename='indrabot.%s' % output_format,
+                                        filetype=output_format,
+                                        file=open(reply, 'rb'),
+                                        text=msg)
+                        # Try dumping to S3
+                        try:
+                            url = dump_to_s3(resp_stmts)
+                            msg = 'You can also view these results here: %s' % url
+                            send_message(sc, channel, msg)
+                        except Exception as e:
+                            logger.error(e)
                     print(resp.keys())
                     if 'suggestion' in resp:
                         print(resp['suggestion'])
