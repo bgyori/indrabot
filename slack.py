@@ -8,6 +8,7 @@ import pickle
 import random
 import datetime
 import websocket
+from indra.config import get_config
 from indra.assemblers.english import EnglishAssembler
 from indra.assemblers.tsv import TsvAssembler
 from indra.assemblers.graph import GraphAssembler
@@ -150,11 +151,14 @@ def format_stmts(stmts, output_format):
     return None
 
 
+db_rest_url = get_config('INDRA_DB_REST_URL')
+
+
 def dump_to_s3(stmts):
     s3 = boto3.client('s3')
     bucket = 'indrabot-results'
     fname = '%s.html' % uuid.uuid4()
-    ha = HtmlAssembler(stmts)
+    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url)
     html_str = ha.make_model()
     url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
     logger.info('Dumping to %s' % url)
