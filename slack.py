@@ -108,7 +108,7 @@ def send_message(sc, channel, msg):
     logger.info('Message sent: %s' % msg)
 
 
-def format_stmts(stmts, output_format):
+def format_stmts(stmts, output_format, ev_counts=None):
     if output_format == 'tsv':
         msg = ''
         for stmt in stmts:
@@ -144,7 +144,8 @@ def format_stmts(stmts, output_format):
         msg = json.dumps(stmts_to_json(stmts), indent=1)
         return msg
     elif output_format == 'html':
-        ha = HtmlAssembler(stmts)
+        ev_counts = {} if not ev_counts else ev_counts
+        ha = HtmlAssembler(stmts, ev_totals=ev_counts)
         fname = 'indrabot.html'
         ha.save_model(fname)
         return fname
@@ -158,7 +159,8 @@ def dump_to_s3(stmts):
     s3 = boto3.client('s3')
     bucket = 'indrabot-results'
     fname = '%s.html' % uuid.uuid4()
-    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url)
+    print(ev_counts)
+    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url, ev_totals=ev_counts)
     html_str = ha.make_model()
     url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
     logger.info('Dumping to %s' % url)
@@ -224,6 +226,7 @@ if __name__ == '__main__':
                         continue
 
                     resp_stmts = resp['stmts']
+                    ev_counts = resp.get('ev_counts', {})
 
                     logf.write('%d\n' % len(resp_stmts))
 
@@ -241,7 +244,8 @@ if __name__ == '__main__':
                                   ('s' if (len(resp_stmts) > 1) else ''))
                     send_message(sc, channel, msg)
                     if resp_stmts:
-                        reply = format_stmts(resp_stmts, output_format)
+                        reply = format_stmts(resp_stmts, output_format,
+                                             ev_counts)
                         if output_format in ('tsv', 'json'):
                             sc.api_call("files.upload",
                                         channels=channel,

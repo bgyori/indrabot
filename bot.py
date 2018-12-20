@@ -311,7 +311,8 @@ def get_activeforms(entity):
     key = '%s@%s' % (dbi, dbn)
     stmts = indra_db_rest.get_statements(agents=[key], stmt_type='ActiveForm',
                                          ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_phos_activeforms(entity):
@@ -321,7 +322,8 @@ def get_phos_activeforms(entity):
         for mc in stmt.agent.mods:
             if mc.mod_type == 'phosphorylation':
                 ret_stmts.append(stmt)
-    return {'stmts': ret_stmts, 'groundings': ret['groundings']}
+    return {'stmts': ret_stmts, 'groundings': ret['groundings'],
+            'ev_counts': ret['ev_counts']}
 
 
 def get_binary_directed(entity1, entity2, verb=None):
@@ -330,16 +332,17 @@ def get_binary_directed(entity1, entity2, verb=None):
     dbn2, dbi2 = get_grounding_from_name(entity2)
     key2 = '%s@%s' % (dbi2, dbn2)
     if not verb or verb not in mod_map:
-        stmts = indra_db_rest.get_statements(subject=key1,
-                                             object=key2, ev_limit=EV_LIMIT)
+        stmts, ev_counts = get_statements(subject=key1,
+                                          object=key2, ev_limit=EV_LIMIT)
     elif verb in mod_map:
         stmt_type = mod_map[verb]
-        stmts = indra_db_rest.get_statements(subject=key1,
-                                             object=key2,
-                                             stmt_type=stmt_type,
-                                             ev_limit=EV_LIMIT)
+        stmts, ev_counts = get_statements(subject=key1,
+                                          object=key2,
+                                          stmt_type=stmt_type,
+                                          ev_limit=EV_LIMIT)
     return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
-                                           entity2: (dbn2, dbi2)}}
+                                           entity2: (dbn2, dbi2)},
+            'ev_counts': ev_counts}
 
 
 def get_binary_undirected(entity1, entity2):
@@ -347,44 +350,55 @@ def get_binary_undirected(entity1, entity2):
     key1 = '%s@%s' % (dbi1, dbn1)
     dbn2, dbi2 = get_grounding_from_name(entity2)
     key2 = '%s@%s' % (dbi2, dbn2)
-    stmts = indra_db_rest.get_statements(agents=[key1, key2],
-                                         ev_limit=EV_LIMIT)
+    stmts, ev_counts = get_statements(agents=[key1, key2],
+                                      ev_limit=EV_LIMIT)
     return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
-                                           entity2: (dbn2, dbi2)}}
+                                           entity2: (dbn2, dbi2)},
+            'ev_counts': ev_counts}
 
 
 def get_from_source(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts = indra_db_rest.get_statements(subject=key, ev_limit=EV_LIMIT)
+        stmts, ev_counts = get_statements(subject=key, ev_limit=EV_LIMIT)
     else:
         stmt_type = mod_map[verb]
-        stmts = indra_db_rest.get_statements(subject=key,
-                                             stmt_type=stmt_type,
-                                             ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+        stmts, ev_counts = get_statements(subject=key,
+                                          stmt_type=stmt_type,
+                                          ev_limit=EV_LIMIT)
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_complex_one_side(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(agents=[key], stmt_type='Complex',
-                                         ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+    stmts, ev_counts = get_statements(agents=[key], stmt_type='Complex',
+                                      ev_limit=EV_LIMIT)
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_to_target(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts = indra_db_rest.get_statements(object=key, ev_limit=EV_LIMIT)
+        stmts, ev_counts = get_statements(object=key, ev_limit=EV_LIMIT)
     else:
         stmt_type = mod_map[verb]
-        stmts = indra_db_rest.get_statements(object=key,
-                                             stmt_type=stmt_type,
-                                             ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+        stmts, ev_counts = get_statements(object=key,
+                                          stmt_type=stmt_type,
+                                          ev_limit=EV_LIMIT)
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
+
+
+def get_statements(**kwargs):
+    res = indra_db_rest.get_statements(simple_response=False, **kwargs)
+    ev_totals = {int(stmt_hash): res.get_ev_count(stmt) for stmt_hash, stmt in
+                 res.get_hash_statements_dict().items()}
+    return res.statements, ev_totals
 
 
 def makelambda_uni(fun, verb):
