@@ -311,7 +311,8 @@ def get_activeforms(entity):
     key = '%s@%s' % (dbi, dbn)
     stmts = indra_db_rest.get_statements(agents=[key], stmt_type='ActiveForm',
                                          ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_phos_activeforms(entity):
@@ -321,7 +322,8 @@ def get_phos_activeforms(entity):
         for mc in stmt.agent.mods:
             if mc.mod_type == 'phosphorylation':
                 ret_stmts.append(stmt)
-    return {'stmts': ret_stmts, 'groundings': ret['groundings']}
+    return {'stmts': ret_stmts, 'groundings': ret['groundings'],
+            'ev_counts': ret['ev_counts']}
 
 
 def get_binary_directed(entity1, entity2, verb=None):
@@ -339,7 +341,8 @@ def get_binary_directed(entity1, entity2, verb=None):
                                           stmt_type=stmt_type,
                                           ev_limit=EV_LIMIT)
     return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
-                                           entity2: (dbn2, dbi2)}}
+                                           entity2: (dbn2, dbi2)},
+            'ev_counts': ev_counts}
 
 
 def get_binary_undirected(entity1, entity2):
@@ -350,7 +353,8 @@ def get_binary_undirected(entity1, entity2):
     stmts, ev_counts = get_statements(agents=[key1, key2],
                                       ev_limit=EV_LIMIT)
     return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
-                                           entity2: (dbn2, dbi2)}}
+                                           entity2: (dbn2, dbi2)},
+            'ev_counts': ev_counts}
 
 
 def get_from_source(entity, verb=None):
@@ -363,7 +367,8 @@ def get_from_source(entity, verb=None):
         stmts, ev_counts = get_statements(subject=key,
                                           stmt_type=stmt_type,
                                           ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_complex_one_side(entity):
@@ -371,7 +376,8 @@ def get_complex_one_side(entity):
     key = '%s@%s' % (dbi, dbn)
     stmts, ev_counts = get_statements(agents=[key], stmt_type='Complex',
                                       ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_to_target(entity, verb=None):
@@ -384,7 +390,8 @@ def get_to_target(entity, verb=None):
         stmts, ev_counts = get_statements(object=key,
                                           stmt_type=stmt_type,
                                           ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_statements(**kwargs):
