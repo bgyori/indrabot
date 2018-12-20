@@ -159,7 +159,8 @@ def dump_to_s3(stmts):
     s3 = boto3.client('s3')
     bucket = 'indrabot-results'
     fname = '%s.html' % uuid.uuid4()
-    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url)
+    print(ev_counts)
+    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url, ev_totals=ev_counts)
     html_str = ha.make_model()
     url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
     logger.info('Dumping to %s' % url)

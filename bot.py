@@ -396,8 +396,8 @@ def get_to_target(entity, verb=None):
 
 def get_statements(**kwargs):
     res = indra_db_rest.get_statements(simple_response=False, **kwargs)
-    ev_totals = [stmt_hash: res.get_ev_count(stmt) for stmt_hash, stmt in
-                 res.get_hash_statements_dict().items()]
+    ev_totals = {stmt_hash: res.get_ev_count(stmt) for stmt_hash, stmt in
+                 res.get_hash_statements_dict().items()}
     return res.statements, ev_totals
 
 
