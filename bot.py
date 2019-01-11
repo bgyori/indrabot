@@ -302,15 +302,16 @@ def get_grounding_from_name(name):
 def get_neighborhood(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(agents=[key], ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)}}
+    stmts, ev_counts = get_statements(agents=[key], ev_limit=EV_LIMIT)
+    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
+            'ev_counts': ev_counts}
 
 
 def get_activeforms(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts = indra_db_rest.get_statements(agents=[key], stmt_type='ActiveForm',
-                                         ev_limit=EV_LIMIT)
+    stmts, ev_counts = get_statements(agents=[key], stmt_type='ActiveForm',
+                                      ev_limit=EV_LIMIT)
     return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
             'ev_counts': ev_counts}
 
