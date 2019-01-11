@@ -396,10 +396,20 @@ def get_to_target(entity, verb=None):
 
 
 def get_statements(**kwargs):
+    # We first run the actual query and ask for a non-simple response
     res = indra_db_rest.get_statements(simple_response=False, **kwargs)
+    # We get a dict of stmts keyed by stmt hashes
+    hash_stmts_dict = res.get_hash_statements_dict()
+    # From this we can get a dict of evidence totals fore ach stmt
     ev_totals = {int(stmt_hash): res.get_ev_count(stmt) for stmt_hash, stmt in
-                 res.get_hash_statements_dict().items()}
-    return res.statements, ev_totals
+                 hash_stmts_dict.items()}
+    # We now sort the statements by most to least evidence by looking at
+    # the evidence totals
+    sorted_stmts = [it[1] for it in
+                    sorted(hash_stmts_dict.items(),
+                           key=lambda x: ev_totals.get(int(x[0]), 0),
+                           reverse=True)]
+    return sorted_stmts, ev_totals
 
 
 def makelambda_uni(fun, verb):
