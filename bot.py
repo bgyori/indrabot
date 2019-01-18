@@ -401,8 +401,8 @@ def get_statements(**kwargs):
     # We get a dict of stmts keyed by stmt hashes
     hash_stmts_dict = res.get_hash_statements_dict()
     # From this we can get a dict of evidence totals fore ach stmt
-    ev_totals = {int(stmt_hash): res.get_ev_count(stmt) for stmt_hash, stmt in
-                 hash_stmts_dict.items()}
+    ev_totals = {int(stmt_hash): res.get_ev_count_by_hash(stmt_hash)
+                 for stmt_hash, stmt in hash_stmts_dict.items()}
     # We now sort the statements by most to least evidence by looking at
     # the evidence totals
     sorted_stmts = [it[1] for it in
