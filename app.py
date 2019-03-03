@@ -5,6 +5,8 @@ from flask_appconfig import AppConfig
 from wtforms import TextField, SubmitField
 from flask import Flask, render_template, request
 
+from indra.assemblers.html import HtmlAssembler
+
 from bot import IndraBot
 
 
@@ -14,8 +16,8 @@ class ExampleForm(Form):
     submit_button = SubmitField('Ask INDRA')
 
 
-def format_stmts(stmts):
-    """Return Statements formatted as an HTML string."""
+def format_stmts_raw(stmts):
+    """Return Statements formatted as simple HTML string."""
     stmts = stmts.get('stmts', [])
     stmts = sorted(stmts, key=lambda x: x.__class__.__name__)
     html = ''
@@ -25,6 +27,14 @@ def format_stmts(stmts):
         for stmt in stmts_this_type:
             line = '<p>%s, %s</p>\n' % (str(stmt), stmt.evidence[0].text)
             html += line
+    return html
+
+
+def format_stmts_html(stmts):
+    """Return Statements assembled with INDRA's HTML assembler."""
+    stmts = stmts.get('stmts', [])
+    ha = HtmlAssembler(stmts)
+    html = ha.make_model()
     return html
 
 
@@ -55,7 +65,7 @@ def create_app(configfile=None):
             stmts = bot.handle_question(question)
             # If we got some Statements, display them
             if stmts:
-                resp_html = format_stmts(stmts)
+                resp_html = format_stmts_html(stmts)
                 kwargs['response'] = resp_html
             # Otherwise show sorry message
             else:
