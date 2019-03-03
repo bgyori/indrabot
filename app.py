@@ -16,9 +16,9 @@ class ExampleForm(Form):
     submit_button = SubmitField('Ask INDRA')
 
 
-def format_stmts_raw(stmts):
+def format_stmts_raw(stmt_resp):
     """Return Statements formatted as simple HTML string."""
-    stmts = stmts.get('stmts', [])
+    stmts = stmt_resp.get('stmts', [])
     stmts = sorted(stmts, key=lambda x: x.__class__.__name__)
     html = ''
     for stmt_type, stmts_this_type in \
@@ -30,10 +30,12 @@ def format_stmts_raw(stmts):
     return html
 
 
-def format_stmts_html(stmts):
+def format_stmts_html(stmt_resp):
     """Return Statements assembled with INDRA's HTML assembler."""
-    stmts = stmts.get('stmts', [])
-    ha = HtmlAssembler(stmts)
+    stmts = stmt_resp.get('stmts', [])
+    ev_counts = stmt_resp.get('ev_counts', {})
+    ha = HtmlAssembler(stmts, ev_totals=ev_counts,
+                       db_rest_url='https://db.indra.bio')
     html = ha.make_model()
     return html
 
