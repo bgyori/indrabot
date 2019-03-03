@@ -1,23 +1,21 @@
-from flask import Flask, render_template, flash, request
+from itertools import groupby
+from flask_wtf import Form
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
-from flask_wtf import Form, RecaptchaField
-from flask_wtf.file import FileField
-from wtforms import TextField, HiddenField, ValidationError, RadioField,\
-    BooleanField, SubmitField, IntegerField, FormField, validators
-from wtforms.validators import Required
+from wtforms import TextField, SubmitField
+from flask import Flask, render_template, request
 
-
-from itertools import groupby
 from bot import IndraBot
 
 
 class ExampleForm(Form):
+    """Create form to enter and submit question."""
     question = TextField('')
     submit_button = SubmitField('Ask INDRA')
 
 
 def format_stmts(stmts):
+    """Return Statements formatted as an HTML string."""
     stmts = stmts.get('stmts', [])
     stmts = sorted(stmts, key=lambda x: x.__class__.__name__)
     html = ''
@@ -29,7 +27,9 @@ def format_stmts(stmts):
             html += line
     return html
 
+
 def create_app(configfile=None):
+    """Cteate and run the app."""
     app = Flask(__name__)
     AppConfig(app, configfile)
     app.config['SECRET_KEY'] = open('app_secret', 'r').read()
@@ -38,26 +38,33 @@ def create_app(configfile=None):
 
     Bootstrap(app)
 
-
     @app.route('/', methods=('GET', 'POST'))
     def index():
+        # Create the form
         form = ExampleForm()
+        # Try to get the question from the form
         try:
             question = request.form['question']
             print(question)
         except Exception as e:
             question = None
         kwargs = {'form': form}
+        # If we have a question
         if question:
+            # Send the question to the bot
             stmts = bot.handle_question(question)
+            # If we got some Statements, display them
             if stmts:
                 resp_html = format_stmts(stmts)
                 kwargs['response'] = resp_html
+            # Otherwise show sorry message
             else:
                 kwargs['response'] = 'Sorry, I couldn\'t find anything!'
+        # Finally, render the template
         return render_template('index.html', **kwargs)
 
     return app
+
 
 if __name__ == '__main__':
     bot = IndraBot()
