@@ -205,23 +205,28 @@ def help_message(long=False, topic=None):
     what X binds to.
 
     Output Formats:
-    There are five output formats, tsv (default), json, pdf, html and 
-    pickle.
+    There are five output formats:
+    tsv (default), json, pdf, html and pickle.
+    
     *tsv:
         A tab separated list of statements, their english assembled 
         versions, their evidence texts that produced the statement and a 
         PMID (if available) where the evidence was found.
+    
     *json:
         A json representation of the statements found. This corresponds 
-        to a what would be the output of `indra.statements.stmts_to_json(
-        statements)` for a list of indra statement objects in Python. 
+        to what would be the output of `indra.statements.stmts_to_json(
+        statements)` where `statements` is a list of indra statement objects. 
+    
     *pdf:
         A pdf document containing a directed node-edge graph of the 
         statements.
+    
     *html:
         A downloadable HTML document that contains an HTML assembled 
         version of the statements. This is the same page that is linked 
         at the bottom of each response.
+    
     *pickle:
         A pkl file containing a pickle of the list of indra statement 
         objects.  
