@@ -1,3 +1,4 @@
+import re
 import sys
 import time
 import json
@@ -281,6 +282,14 @@ if __name__ == '__main__':
                             output_format = mod
                             msg = msg[:-(len(mod)+1)].strip()
                             break
+
+                    if re.sub('[.,?!;:]', '', msg.lower()) in \
+                            ['help', 'what can you do']:
+                        msg = re.sub('[.,?!;:]', '', msg.lower())
+                        help_resp = help_message(
+                            long=msg == 'what can you do')
+                        send_message(sc, channel, help_resp)
+                        continue
 
                     resp = bot.handle_question(msg)
                     if 'question' in resp:
