@@ -178,60 +178,68 @@ def help_message(long=False, topic=None):
     #  detail.
 
     get_more = "To get a more detailed help message, ask me '@indrabot " \
-               "how do you work?'"
+               "what can you do?'"
 
-    short_help = """
-    Ask me a question with a direct message (using '@indrabot') 
-    about gene mechanisms and I will try to answer them. 
-    For example: '@indrabot What activates X?' or '@indrabot What 
-    phosphorylates X?' will find genes that activates or phosphorylates 
-    the target X, respectively.
+    short_help = ("\n"
+                  "    Ask me a question with a direct message\n"
+                  "    (using '@indrabot') about gene mechanisms and I will\n"
+                  "    try to answer them. For example:\n"
+                  "    '@indrabot what activates X?' or\n"
+                  "    '@indrabot what phosphorylates X?'\n"
+                  "    will find genes that activates or phosphorylates the\n"
+                  "    target X, respectively.\n"
+                  "\n"
+                  "    The answer is a list of statements with their\n"
+                  "    evidences, source PMID (if available) and a link to an\n"
+                  "    HTML interface that show the list of statements in\n"
+                  "    more detail.\n"
+                  "\n\n")
 
-    The answer is a list of statements with their evidences, source PMID 
-    (if available) and a link to an HTML interface that show the list of 
-    statements in more detail.
-
-    """
-
-    long_help = """Scopes and Mechanism Types:
-    A question can be mechanism specific, for example you can ask a 
-    question like 'What activates X?' or 'What 
-    phosphorylates X?', and you will get answers that fit the scope, 
-    i.e. with mechanisms that involve activation or phosphorylation 
-    of X, respectively. To broaden the scope, you can ask 'What targets 
-    X?', to get any type of mechanism where X is a target, or in the same 
-    manner: 'What are the targets of X?' to get any mechanism where X 
-    targets other entities. If you want an even broader scope you can ask 
-    'What interacts with X?', to get both what X targets, what targets X and 
-    what X binds to.
-
-    Output Formats:
-    There are five output formats:
-    tsv (default), json, pdf, html and pickle.
-    
-    *tsv:
-        A tab separated list of statements, their english assembled 
-        versions, their evidence texts that produced the statement and a 
-        PMID (if available) where the evidence was found.
-    
-    *json:
-        A json representation of the statements found. This corresponds 
-        to what would be the output of `indra.statements.stmts_to_json(
-        statements)` where `statements` is a list of indra statement objects. 
-    
-    *pdf:
-        A pdf document containing a directed node-edge graph of the 
-        statements.
-    
-    *html:
-        A downloadable HTML document that contains an HTML assembled 
-        version of the statements. This is the same page that is linked 
-        at the bottom of each response.
-    
-    *pickle:
-        A pkl file containing a pickle of the list of indra statement 
-        objects.  
-    """
+    long_help = ("Scopes and Mechanism Types:\n"
+                 "    A question can be mechanism specific, for example you \n"
+                 "    can ask a question like 'what activates X?' or\n"
+                 "    'what phosphorylates X?', and you will get answers that\n"
+                 "    fit the scope, i.e. with mechanisms that involve \n"
+                 "    activation or phosphorylation of X, respectively. To\n"
+                 "    broaden the scope, you can ask 'what targets X?', to\n"
+                 "    get any type of mechanism where X is a target, or in\n"
+                 "    the same manner: 'what are the targets of X?' to get\n"
+                 "    any mechanism where X targets other entities. If you\n"
+                 "    want an even broader scope you can ask\n"
+                 "    'what interacts with X?', to get both what X targets, \n"
+                 "    what targets X and what X binds to.\n"
+                 "\n"
+                 "    Output Formats:\n"
+                 "    There are five output formats:\n"
+                 "    tsv (default), json, pdf, html and pickle.\n"
+                 "    \n"
+                 "    *tsv:\n"
+                 "        A tab separated list of statements, their english\n"
+                 "        assembled versions, their evidence texts that\n"
+                 "        produced the statement and a PMID (if available)\n"
+                 "        where the evidence was found.\n"
+                 "    \n"
+                 "    *json:\n"
+                 "        A json representation of the statements found. This\n"
+                 "        corresponds to what would be the output of\n"
+                 "        `indra.statements.stmts_to_json(statements)`\n"
+                 "        where `statements` is a list of indra statement "
+                 "        objects. \n"
+                 "    \n"
+                 "    *pdf:\n"
+                 "        A pdf document containing a directed node-edge\n"
+                 "        graph of the statements.\n"
+                 "    \n"
+                 "    *html:\n"
+                 "        A downloadable HTML document that contains an HTML\n"
+                 "        assembled version of the statements. This is the\n"
+                 "        same page that is linked at the bottom of each\n"
+                 "        response.\n"
+                 "    \n"
+                 "    *pickle:\n"
+                 "        A pkl file containing a pickle of the list of\n"
+                 "        indra statement objects.  \n"
+                 "    ")
     return short_help + long_help if long else short_help + get_more
 
 
