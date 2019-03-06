@@ -170,7 +170,7 @@ def dump_to_s3(stmts):
     return url
 
 
-def help_message(verbose=False, topic=None):
+def help_message(long=False, topic=None):
     """An instructive message sent to users who ask for help"""
     # TODO
     #  *Add different topics to describe specific functionalities in
@@ -179,9 +179,9 @@ def help_message(verbose=False, topic=None):
     get_more = "To get a more detailed help message, ask me '@indrabot " \
                "how do you work?'"
 
-    msg = """
+    short_help = """
     Ask me a question with a direct message (using '@indrabot') 
-    about gene mechanisms and I will try to answer them . 
+    about gene mechanisms and I will try to answer them. 
     For example: '@indrabot What activates X?' or '@indrabot What 
     phosphorylates X?' will find genes that activates or phosphorylates 
     the target X, respectively.
@@ -192,40 +192,41 @@ def help_message(verbose=False, topic=None):
 
     """
 
-    detailed_msg = """Mechanism types:
+    long_help = """Scopes and Mechanism Types:
     A question can be mechanism specific, for example you can ask a 
     question like 'What activates X?' or 'What 
     phosphorylates X?', and you will get answers that fit the scope, 
     i.e. with mechanisms that involve activation or phosphorylation 
     of X, respectively. To broaden the scope, you can ask 'What targets 
-    X?', to get any type of mechanism where X is a target. If you want an 
-    even broader scope you can ask 'What interacts with X?', to get both 
-    what X targets, what targets X and what X binds to.
+    X?', to get any type of mechanism where X is a target, or in the same 
+    manner: 'What are the targets of X?' to get any mechanism where X 
+    targets other entities. If you want an even broader scope you can ask 
+    'What interacts with X?', to get both what X targets, what targets X and 
+    what X binds to.
 
-    Output formats:
+    Output Formats:
     There are five output formats, tsv (default), json, pdf, html and 
     pickle.
-    tsv:
+    *tsv:
         A tab separated list of statements, their english assembled 
         versions, their evidence texts that produced the statement and a 
         PMID (if available) where the evidence was found.
-    json:
+    *json:
         A json representation of the statements found. This corresponds 
         to a what would be the output of `indra.statements.stmts_to_json(
         statements)` for a list of indra statement objects in Python. 
-    pdf:
+    *pdf:
         A pdf document containing a directed node-edge graph of the 
         statements.
-    html:
+    *html:
         A downloadable HTML document that contains an HTML assembled 
         version of the statements. This is the same page that is linked 
         at the bottom of each response.
-    pickle:
+    *pickle:
         A pkl file containing a pickle of the list of indra statement 
         objects.  
     """
-    return msg + detailed_msg if verbose else \
-        msg + get_more
+    return short_help + long_help if long else short_help + get_more
 
 
 def _connect():
