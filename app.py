@@ -1,5 +1,6 @@
 from itertools import groupby
 from flask_wtf import Form
+from flask_pymongo import PyMongo
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
 from wtforms import TextField, SubmitField
@@ -47,6 +48,9 @@ def create_app(configfile=None):
     app.config['SECRET_KEY'] = open('app_secret', 'r').read()
     app.config['RECAPTCHA_PUBLIC_KEY'] = \
         '6Lfol9cSAAAAADAkodaYl9wvQCwBMr3qGR_PPHcw'
+    app.config["MONGO_URI"] = "mongodb://localhost:27017/myDatabase"
+    mongo = PyMongo(app)
+    mongo.db.create_collection('results')
 
     Bootstrap(app)
 
