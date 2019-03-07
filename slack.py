@@ -57,17 +57,29 @@ def get_user_name(sc, user_id):
     return None
 
 
-def get_channel_name(sc, channel_id):
-    channel_name = channel_cache.get(channel_id)
-    if channel_name:
-        return channel_name
+def get_channel_info(sc, channel_id):
+    # Return from cache if possible
+    if channel_id in channel_cache:
+        return channel_cache[channel_id]
+
+    # First, we try channels.info which only works for public channels
     res = sc.server.api_call('channels.info', channel=channel_id)
-    channel_info = json.loads(res)
-    channel = channel_info['channel']
-    if channel['id'] == channel_id:
-        channel_cache[channel_id] = channel['name']
-        return channel['name']
-    return None
+    res_json = json.loads(res)
+    # If we got a channel, then this is a public channel and we can
+    # cache its info
+    if 'channel' in res_json:
+        channel_info = res_json['channel']
+    # If this is not a public channel, we get groups.info instead which can
+    # reveal if this is a private channel
+    else:
+        res = sc.server.api_call('groups.info', channel=channel_id)
+        res_json = json.loads(res)
+        if 'channel' in res_json:
+            channel_info = res_json['channel']
+        elif res_json.get('error') == 'channel_not_found':
+            channel_info = 'PRIVATE'
+    channel_cache[channel_id] = channel_info
+    return channel_info
 
 
 def read_message(sc):
@@ -259,6 +271,7 @@ def _connect():
 if __name__ == '__main__':
     logf = open('slack_bot_log.txt', 'a', 1)
     bot = IndraBot()
+    bot_id = 'U2F1KPXEW'
 
     sc = _connect()
     while True:
@@ -273,12 +286,21 @@ if __name__ == '__main__':
                 continue
             elif res:
                 (channel, username, msg, userid) = res
+                # Skip own messages
+                if userid == bot_id:
+                    continue
                 try:
-                    if '<@U2F1KPXEW>' not in msg:
+                    channel_info = get_channel_info(sc, channel)
+                    # If this is not a private convo and the bot wasn't named,
+                    # then we don't answer.
+                    if channel_info != 'PRIVATE' and \
+                        '<@%s>' % bot_id not in msg:
                         continue
+                    # We also skip file uploads
                     if 'uploaded a file' in msg:
                         continue
-                    msg = msg.replace('<@U2F1KPXEW>', '').strip()
+                    # Replace our own ID in the message if it's in there
+                    msg = msg.replace('<@%s>' % bot_id, '').strip()
 
                     ts = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
 
