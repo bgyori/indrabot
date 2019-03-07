@@ -180,20 +180,17 @@ def help_message(long=False, topic=None):
     get_more = "To get a more detailed help message, ask me '@indrabot " \
                "what can you do?'"
 
-    short_help = ("\n"
-                  "Ask me a question with a direct message\n"
-                  "(using '@indrabot') about gene mechanisms and I will\n"
-                  "try to answer them. For example:\n"
-                  "'@indrabot what activates X?' or\n"
-                  "'@indrabot what phosphorylates X?'\n"
-                  "will find genes that activates or phosphorylates the\n"
-                  "target X, respectively.\n"
-                  "\n"
-                  "The answer is a list of statements with their\n"
-                  "evidences, source PMID (if available) and a link to an\n"
-                  "HTML interface that show the list of statements in\n"
-                  "more detail.\n"
-                  "\n\n")
+    short_help = ("Ask me a question with a direct message "
+                  "(using '@indrabot') about mechanisms and I will "
+                  "try to answer them. For example: "
+                  "'@indrabot what activates NF-kB?' or "
+                  "'@indrabot what phosphorylates RB1?'\n"
+                  "The answer is a list of statements with their "
+                  "human-readable English language summary, original evidence"
+                  "sentence, and source PMID (if available)."
+                  "The response also contains a link to an "
+                  "HTML interface that show the list of statements in "
+                  "more detail.\n\n")
 
     long_help = ("Scopes and Mechanism Types:\n"
                  "A question can be mechanism specific, for example you \n"
