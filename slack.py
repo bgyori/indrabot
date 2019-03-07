@@ -172,7 +172,6 @@ def dump_to_s3(stmts):
     s3 = boto3.client('s3')
     bucket = 'indrabot-results'
     fname = '%s.html' % uuid.uuid4()
-    print(ev_counts)
     ha = HtmlAssembler(stmts, db_rest_url=db_rest_url, ev_totals=ev_counts)
     html_str = ha.make_model()
     url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
@@ -300,7 +299,7 @@ if __name__ == '__main__':
                     if 'uploaded a file' in msg:
                         continue
                     # Replace our own ID in the message if it's in there
-                    msg = msg.replace('<@%s>' % bot_id, '').strip()
+                    msg = msg.replace('<@%s>' % bot_id, '').strip()
 
                     ts = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
 
@@ -372,7 +371,6 @@ if __name__ == '__main__':
                             send_message(sc, channel, msg)
                         except Exception as e:
                             logger.error(e)
-                    print(resp.keys())
                     if 'suggestion' in resp:
                         print(resp['suggestion'])
                         send_message(sc, channel, resp['suggestion'])
