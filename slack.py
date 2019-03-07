@@ -78,6 +78,10 @@ def get_channel_info(sc, channel_id):
             channel_info = res_json['channel']
         elif res_json.get('error') == 'channel_not_found':
             channel_info = 'PRIVATE'
+        else:
+            print(res_json)
+            print('Unexpected channel info.')
+            channel_info = 'UNKNOWN'
     channel_cache[channel_id] = channel_info
     return channel_info
 
