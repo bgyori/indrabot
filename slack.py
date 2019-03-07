@@ -1,3 +1,4 @@
+import re
 import sys
 import time
 import json
@@ -170,6 +171,80 @@ def dump_to_s3(stmts):
     return url
 
 
+def help_message(long=False, topic=None):
+    """An instructive message sent to users who ask for help"""
+    # TODO
+    #  *Add different topics to describe specific functionalities in
+    #  detail.
+
+    get_more = "To get a more detailed help message, ask me " \
+        "```@indrabot what can you do?```"
+
+    short_help = ("Ask me a question with a direct message "
+                  "(using `@indrabot`) about mechanisms and I will "
+                  "try to answer them. For example: \n"
+                  "```@indrabot what activates NF-kB?```\n or "
+                  "```@indrabot what phosphorylates RB1?```\n "
+                  "You can try various ways of phrasing your questions, and "
+                  "if there is anything I don't understand, I will suggest a "
+                  "similar question to yours that I do know how to answer. "
+                  "My answer is formatted as a snippet with a list of "
+                  "statements with their "
+                  "human-readable English language summaries, original "
+                  "evidence sentences, and source PMIDs (if available)."
+                  "The response also contains a link to an "
+                  "HTML interface that show the list of statements in "
+                  "more detail.\n\n")
+
+    long_help = ("Scopes and Mechanism Types:\n"
+                 "Your question can be mechanism specific, for example you "
+                 "can ask a question like ```can BRAF activate Mek1?``` or "
+                 "```what does JAK1 phosphorylate?```, and you will get "
+                 "answers "
+                 "that fit the scope, i.e., with mechanisms that involve "
+                 "activation or phosphorylation, respectively. To "
+                 "broaden the scope, you can ask ```what affects CDK4?```, to "
+                 "get any type of mechanism where CDK4 is downstream, or in "
+                 "the same manner: ```what are the targets of EGFR?``` "
+                 "to get any mechanism where EGFR is upstream of another "
+                 "entity. If you want an even broader scope you can ask "
+                 "```what interacts with DOCK5?```, to get both upstream and "
+                 "downstream interactions of any kind, including binding."
+                 "\n"
+                 "Output Formats:\n"
+                 "There are five output formats I support that you can. "
+                 "specify by ending you message with, for instance, `/json`. "
+                 "These formats are as follows:\n"
+                 "*tsv: "
+                 "A tab separated list of statements, their English "
+                 "assembled versions, their evidence texts that "
+                 "produced the statement and a PMID (if available) "
+                 "where the evidence was found. "
+                 "\n"
+                 "*json: "
+                 "A json representation of the statements found. This "
+                 "corresponds to what would be the output of "
+                 "`indra.statements.stmts_to_json(statements)` "
+                 "where `statements` is a list of INDRA Statement "
+                 "objects. "
+                 "\n"
+                 "*pdf:"
+                 "A pdf document containing a directed node-edge "
+                 "graph visualization of the statements. "
+                 "\n"
+                 "*html:"
+                 "An HTML document that contains an HTML-formatted "
+                 "version of the statements. This is the "
+                 "same page that is linked at the bottom of each "
+                 "response. "
+                 "\n"
+                 "*pickle:"
+                 "A Python pickle file containing a pickle of the list of "
+                 "INDRA Statement objects."
+                 "")
+    return short_help + long_help if long else short_help + get_more
+
+
 def _connect():
     token = read_slack_token()
     if not token:
@@ -217,6 +292,14 @@ if __name__ == '__main__':
                             output_format = mod
                             msg = msg[:-(len(mod)+1)].strip()
                             break
+
+                    if re.sub('[.,?!;:]', '', msg.lower()) in \
+                            ['help', 'what can you do']:
+                        msg = re.sub('[.,?!;:]', '', msg.lower())
+                        help_resp = help_message(
+                            long=msg == 'what can you do')
+                        send_message(sc, channel, help_resp)
+                        continue
 
                     resp = bot.handle_question(msg)
                     if 'question' in resp:
