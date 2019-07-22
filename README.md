@@ -23,3 +23,7 @@ To run the web app, do
 python app.py
 ```
 or use a WSGI application server like gunicorn.
+
+Funding
+-------
+The development of indrabot is funded under the DARPA Communicating with Computers program (ARO grant W911NF-15-1-0544).
