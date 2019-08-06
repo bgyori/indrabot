@@ -4,19 +4,16 @@ import time
 import json
 import uuid
 import boto3
-import indra
 import pickle
 import random
 import datetime
 import websocket
 from indra.config import get_config
 from indra.assemblers.english import EnglishAssembler
-from indra.assemblers.tsv import TsvAssembler
 from indra.assemblers.graph import GraphAssembler
 from indra.assemblers.html import HtmlAssembler
 import logging
 from slackclient import SlackClient
-from indra.util import batch_iter
 from indra.statements import stmts_to_json
 
 from bot import IndraBot
@@ -177,7 +174,7 @@ def dump_to_s3(stmts, ev_counts, source_counts):
     s3 = boto3.client('s3')
     bucket = 'indrabot-results'
     fname = '%s.html' % uuid.uuid4()
-    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url, ev_totals=ev_counts,
+    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url, ev_totals=ev_totals,
                        source_counts=source_counts)
     html_str = ha.make_model()
     url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
@@ -336,7 +333,7 @@ if __name__ == '__main__':
                         continue
 
                     resp_stmts = resp['stmts']
-                    ev_counts = resp.get('ev_counts', {})
+                    ev_totals = resp.get('ev_totals', {})
                     source_counts = resp.get('source_counts', {})
 
                     logf.write('%d\n' % len(resp_stmts))
@@ -357,7 +354,7 @@ if __name__ == '__main__':
                     send_message(sc, channel, msg)
                     if resp_stmts:
                         reply = format_stmts(resp_stmts, output_format,
-                                             ev_counts, source_counts)
+                                             ev_totals, source_counts)
                         if output_format in ('tsv', 'json'):
                             sc.api_call("files.upload",
                                         channels=channel,
@@ -374,13 +371,13 @@ if __name__ == '__main__':
                                         text=msg)
                         # Try dumping to S3
                         try:
-                            url = dump_to_s3(resp_stmts, ev_counts,
+                            url = dump_to_s3(resp_stmts, ev_totals,
                                              source_counts)
                             msg = ('You can also view these results here: %s'
                                    % url)
                             send_message(sc, channel, msg)
                         except Exception as e:
-                            logger.error(e)
+                            logger.exception(e)
                     if 'suggestion' in resp:
                         print(resp['suggestion'])
                         send_message(sc, channel, resp['suggestion'])
