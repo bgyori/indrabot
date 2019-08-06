@@ -125,7 +125,7 @@ def send_message(sc, channel, msg):
     logger.info('Message sent: %s' % msg)
 
 
-def format_stmts(stmts, output_format, ev_counts=None):
+def format_stmts(stmts, output_format, ev_counts=None, source_counts=None):
     if output_format == 'tsv':
         msg = ''
         for stmt in stmts:
@@ -162,7 +162,8 @@ def format_stmts(stmts, output_format, ev_counts=None):
         return msg
     elif output_format == 'html':
         ev_counts = {} if not ev_counts else ev_counts
-        ha = HtmlAssembler(stmts, ev_totals=ev_counts)
+        ha = HtmlAssembler(stmts, ev_totals=ev_counts,
+                           source_counts=source_counts)
         fname = 'indrabot.html'
         ha.save_model(fname)
         return fname
@@ -172,11 +173,12 @@ def format_stmts(stmts, output_format, ev_counts=None):
 db_rest_url = get_config('INDRA_DB_REST_URL')
 
 
-def dump_to_s3(stmts):
+def dump_to_s3(stmts, ev_counts, source_counts):
     s3 = boto3.client('s3')
     bucket = 'indrabot-results'
     fname = '%s.html' % uuid.uuid4()
-    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url, ev_totals=ev_counts)
+    ha = HtmlAssembler(stmts, db_rest_url=db_rest_url, ev_totals=ev_counts,
+                       source_counts=source_counts)
     html_str = ha.make_model()
     url = 'https://s3.amazonaws.com/%s/%s' % (bucket, fname)
     logger.info('Dumping to %s' % url)
@@ -335,6 +337,7 @@ if __name__ == '__main__':
 
                     resp_stmts = resp['stmts']
                     ev_counts = resp.get('ev_counts', {})
+                    source_counts = resp.get('source_counts', {})
 
                     logf.write('%d\n' % len(resp_stmts))
 
@@ -345,7 +348,8 @@ if __name__ == '__main__':
                     prefix = random.choice(prefixes)
                     msg = "%s, <@%s>" % (prefix, userid)
                     if len(resp_stmts) == 0:
-                        msg += ' but I couldn\'t find any statements about that.'
+                        msg += ' but I couldn\'t find any statements about ' \
+                               'that.'
                     else:
                         msg += '! I found %d statement%s about that.' % \
                                  (len(resp_stmts),
@@ -353,7 +357,7 @@ if __name__ == '__main__':
                     send_message(sc, channel, msg)
                     if resp_stmts:
                         reply = format_stmts(resp_stmts, output_format,
-                                             ev_counts)
+                                             ev_counts, source_counts)
                         if output_format in ('tsv', 'json'):
                             sc.api_call("files.upload",
                                         channels=channel,
@@ -370,8 +374,10 @@ if __name__ == '__main__':
                                         text=msg)
                         # Try dumping to S3
                         try:
-                            url = dump_to_s3(resp_stmts)
-                            msg = 'You can also view these results here: %s' % url
+                            url = dump_to_s3(resp_stmts, ev_counts,
+                                             source_counts)
+                            msg = ('You can also view these results here: %s'
+                                   % url)
                             send_message(sc, channel, msg)
                         except Exception as e:
                             logger.error(e)

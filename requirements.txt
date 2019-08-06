@@ -1,5 +1,5 @@
 indra
-slackclient
+slackclient==1.2.1
 flask
 flask-bootstrap
 flask-wtf

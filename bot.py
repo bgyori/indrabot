@@ -1,12 +1,15 @@
 import re
-import copy
 import nltk
+import logging
+import requests
 from fuzzywuzzy import fuzz
 from indra.statements import Agent
-from indra.sources import indra_db_rest, trips
+from indra.sources import indra_db_rest
 from indra.databases import hgnc_client
 from indra.tools import expand_families
-from indra.preassembler.grounding_mapper import gm
+
+
+logger = logging.getLogger('indrabot.bot')
 
 
 EV_LIMIT = 1
@@ -258,62 +261,42 @@ def suggest_relevant_relations(groundings):
                    'like %s.') % (prefix, entity_txt, parents_str)
             msg_parts.append(msg)
 
-
     full_msg = ' '.join(msg_parts)
     return full_msg
 
 
 def get_grounding_from_name(name):
-    # See if it's a gene name
-    hgnc_id = hgnc_client.get_hgnc_id(name)
-    if hgnc_id:
-        return ('HGNC', hgnc_id)
-
-    # Check if it's in the grounding map
     try:
-        refs = gm[name]
-        if isinstance(refs, dict):
-            for dbn, dbi in refs.items():
-                if dbn != 'TEXT':
-                    return (dbn, dbi)
-    # If not, search by text
-    except KeyError:
-        pass
-
-    # If none of these, we try TRIPS
-    try:
-        print('Looking up %s with TRIPS' % name)
-        tp = trips.process_text(name, service_endpoint='drum-dev')
-        terms = tp.tree.findall('TERM')
-        if not terms:
-            return ('TEXT', name)
-        term_id = terms[0].attrib['id']
-        agent = tp._get_agent_by_id(term_id, None)
-        if 'HGNC' in agent.db_refs:
-            return ('HGNC', agent.db_refs['HGNC'])
-        if 'FPLX' in agent.db_refs:
-            return ('FPLX', agent.db_refs['FPLX'])
+        res = requests.post('http://grounding.indra.bio/ground',
+                            json={'text': name})
+        if not res:
+            logger.info('Could not ground %s with Gilda, looking up by name.'
+                        % name)
+            return 'TEXT', name
+        top_term = res.json()[0]['term']
+        logger.info('Grounded %s with Gilda to %s:%s' % (name, top_term['db'],
+                                                         top_term['id']))
+        return top_term['db'], top_term['id']
     except Exception as e:
-        print(e)
-        return ('TEXT', name)
-    return ('TEXT', name)
+        logger.exception(e)
+    return 'TEXT', name
 
 
 def get_neighborhood(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts, ev_counts = get_statements(agents=[key], ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
-            'ev_counts': ev_counts}
+    res = get_statements(agents=[key], ev_limit=EV_LIMIT)
+    res['groundings'] = {entity: (dbn, dbi)}
+    return res
 
 
 def get_activeforms(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts, ev_counts = get_statements(agents=[key], stmt_type='ActiveForm',
-                                      ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
-            'ev_counts': ev_counts}
+    res = get_statements(agents=[key], stmt_type='ActiveForm',
+                         ev_limit=EV_LIMIT)
+    res['groundings'] = {entity: (dbn, dbi)}
+    return res
 
 
 def get_phos_activeforms(entity):
@@ -324,7 +307,8 @@ def get_phos_activeforms(entity):
             if mc.mod_type == 'phosphorylation':
                 ret_stmts.append(stmt)
     return {'stmts': ret_stmts, 'groundings': ret['groundings'],
-            'ev_counts': ret['ev_counts']}
+            'ev_counts': ret['ev_counts'],
+            'source_counts': ret['source_counts']}
 
 
 def get_binary_directed(entity1, entity2, verb=None):
@@ -333,17 +317,13 @@ def get_binary_directed(entity1, entity2, verb=None):
     dbn2, dbi2 = get_grounding_from_name(entity2)
     key2 = '%s@%s' % (dbi2, dbn2)
     if not verb or verb not in mod_map:
-        stmts, ev_counts = get_statements(subject=key1,
-                                          object=key2, ev_limit=EV_LIMIT)
+        res = get_statements(subject=key1, object=key2, ev_limit=EV_LIMIT)
     elif verb in mod_map:
         stmt_type = mod_map[verb]
-        stmts, ev_counts = get_statements(subject=key1,
-                                          object=key2,
-                                          stmt_type=stmt_type,
-                                          ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
-                                           entity2: (dbn2, dbi2)},
-            'ev_counts': ev_counts}
+        res = get_statements(subject=key1, object=key2,
+                             stmt_type=stmt_type, ev_limit=EV_LIMIT)
+    res['groundings'] = {entity1: (dbn1, dbi1), entity2: (dbn2, dbi2)}
+    return res
 
 
 def get_binary_undirected(entity1, entity2):
@@ -351,48 +331,42 @@ def get_binary_undirected(entity1, entity2):
     key1 = '%s@%s' % (dbi1, dbn1)
     dbn2, dbi2 = get_grounding_from_name(entity2)
     key2 = '%s@%s' % (dbi2, dbn2)
-    stmts, ev_counts = get_statements(agents=[key1, key2],
-                                      ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity1: (dbn1, dbi1),
-                                           entity2: (dbn2, dbi2)},
-            'ev_counts': ev_counts}
+    res = get_statements(agents=[key1, key2], ev_limit=EV_LIMIT)
+    res['groundings'] = {entity1: (dbn1, dbi1), entity2: (dbn2, dbi2)}
+    return res
 
 
 def get_from_source(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts, ev_counts = get_statements(subject=key, ev_limit=EV_LIMIT)
+        res = get_statements(subject=key, ev_limit=EV_LIMIT)
     else:
         stmt_type = mod_map[verb]
-        stmts, ev_counts = get_statements(subject=key,
-                                          stmt_type=stmt_type,
-                                          ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
-            'ev_counts': ev_counts}
+        res = get_statements(subject=key, stmt_type=stmt_type,
+                             ev_limit=EV_LIMIT)
+    res['groundings'] = {entity: (dbn, dbi)}
 
 
 def get_complex_one_side(entity):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
-    stmts, ev_counts = get_statements(agents=[key], stmt_type='Complex',
-                                      ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
-            'ev_counts': ev_counts}
+    res = get_statements(agents=[key], stmt_type='Complex', ev_limit=EV_LIMIT)
+    res['groundings'] = {entity: (dbn, dbi)}
+    return res
 
 
 def get_to_target(entity, verb=None):
     dbn, dbi = get_grounding_from_name(entity)
     key = '%s@%s' % (dbi, dbn)
     if not verb or verb not in mod_map:
-        stmts, ev_counts = get_statements(object=key, ev_limit=EV_LIMIT)
+        res = get_statements(object=key, ev_limit=EV_LIMIT)
     else:
         stmt_type = mod_map[verb]
-        stmts, ev_counts = get_statements(object=key,
-                                          stmt_type=stmt_type,
-                                          ev_limit=EV_LIMIT)
-    return {'stmts': stmts, 'groundings': {entity: (dbn, dbi)},
-            'ev_counts': ev_counts}
+        res = get_statements(object=key, stmt_type=stmt_type,
+                             ev_limit=EV_LIMIT)
+    res['groundings'] = {entity: (dbn, dbi)}
+    return res
 
 
 def get_statements(**kwargs):
@@ -403,13 +377,15 @@ def get_statements(**kwargs):
     # From this we can get a dict of evidence totals fore ach stmt
     ev_totals = {int(stmt_hash): res.get_ev_count_by_hash(stmt_hash)
                  for stmt_hash, stmt in hash_stmts_dict.items()}
+    source_counts = res.get_source_counts()
     # We now sort the statements by most to least evidence by looking at
     # the evidence totals
     sorted_stmts = [it[1] for it in
                     sorted(hash_stmts_dict.items(),
                            key=lambda x: ev_totals.get(int(x[0]), 0),
                            reverse=True)]
-    return sorted_stmts, ev_totals
+    return {'stmts': sorted_stmts, 'ev_totals': ev_totals,
+            'source_counts': source_counts}
 
 
 def makelambda_uni(fun, verb):
