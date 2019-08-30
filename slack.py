@@ -295,8 +295,7 @@ if __name__ == '__main__':
                     channel_info = get_channel_info(sc, channel)
                     # If this is not a private convo and the bot wasn't named,
                     # then we don't answer.
-                    if channel_info != 'PRIVATE' and \
-                        '<@%s>' % bot_id not in msg:
+                    if channel_info != 'PRIVATE':
                         continue
                     # We also skip file uploads
                     if 'uploaded a file' in msg:
@@ -342,6 +341,11 @@ if __name__ == '__main__':
                                 'What an interesting question',
                                 'As always, I\'m happy to answer that',
                                 'Very interesting']
+                    preamble = ('Please note that the indrabot is being phased '
+                                'out and replaced by a next generation dialogue '
+                                'agent called `clare`. Please send a message'
+                                ' to the `clare` bot with your question. ')
+                    prefixes = [preamble + p for p in prefixes]
                     prefix = random.choice(prefixes)
                     msg = "%s, <@%s>" % (prefix, userid)
                     if len(resp_stmts) == 0:
